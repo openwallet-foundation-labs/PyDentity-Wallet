@@ -15,7 +15,7 @@ class Config(object):
     DOMAIN = os.getenv("DOMAIN", "localhost")
 
     APP_NAME = "PyDentity Wallet"
-    APP_URL = f"https://{DOMAIN}"
+    APP_URL = os.getenv("DOMAIN", f"https://{DOMAIN}")
 
     PROJECT_URL = "https://github.com/openwallet-foundation-labs/PyDentity-Wallet"
 
