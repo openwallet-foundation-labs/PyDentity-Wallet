@@ -1,0 +1,10 @@
+---
+services:
+
+  pydentity-wallet:
+    build: .
+    restart: unless-stopped
+    entrypoint: ["python", "main.py"]
+    environment:
+      DOMAIN: ${PYDENTITY_WALLET_DOMAIN}
+      SECRET_KEY: ${PYDENTITY_WALLET_SECRET_KEY}
