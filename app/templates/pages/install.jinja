@@ -1,0 +1,47 @@
+{% extends('layouts/base.min.jinja') %}
+{% block page %}
+
+<div class="container container-tight py-4">
+    <div class="text-center mb-4">
+        <a href="." class="navbar-brand navbar-brand-autodark">
+            <img width="220px" src="{{ url_for('static', filename='img/pydentity-logo.png') }}">
+        </a>
+    </div>
+    <div id="loading-access" class="progress progress-sm" style="display: none;">
+        <div class="progress-bar progress-bar-indeterminate"></div>
+    </div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-3">
+                <img src="{{ qrcode(app_url) }}" alt="Install Wallet" class="rounded">
+            </div>
+            <div class="col">
+                <h3 class="card-title mb-1">
+                    <a href="#" class="text-reset">Install Now!</a>
+                </h3>
+                <div class="text-secondary">Open with a mobile device</div>
+                <div class="mt-3">
+                    {# <div class="row g-2 align-items-center">
+                        <div class="col-auto">25%</div>
+                        <div class="col">
+                            <div class="progress progress-sm">
+                                <div class="progress-bar" style="width: 25%" role="progressbar" aria-valuenow="25"
+                                    aria-valuemin="0" aria-valuemax="100" aria-label="25% Complete">
+                                    <span class="visually-hidden">25% Complete</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div> #}
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="dropdown">
+                    <a target="_blank" href="{{ project_url }}" class="text-dark" style="text-decoration : none">
+                        <i class="ti ti-info-square-rounded" style="font-size: 2.0em;"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

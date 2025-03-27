@@ -1,0 +1,65 @@
+{
+  "version": "1.0",
+  "lang": "en",
+  "name": "PyDentity Wallet",
+  "scope": "https://pydentity.net",
+  "display": "standalone",
+  "start_url": "https://pydentity.net",
+  "short_name": "PyDentity",
+  "description": "",
+  "orientation": "portrait",
+  "background_color": "#313131",
+  "theme_color": "#066fd1",
+  "generated": "true",  
+  "credential_handler": {
+    "url": "/wallet/handler",
+    "enabledTypes": ["VerifiablePresentation"]
+  },
+  "icons": [
+    {
+      "src": "static/img/pydentity-icon.png",
+      "sizes": "48x48 64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pydentity-icon.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pydentity-icon.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pydentity-icon.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pydentity-icon.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pydentity-icon.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pydentity-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pydentity-icon.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "img/pydentity-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

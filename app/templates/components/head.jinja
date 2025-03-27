@@ -1,0 +1,54 @@
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{ title }}</title>
+    <meta name="msapplication-TileColor" content="#066fd1">
+    <meta name="theme-color" content="#066fd1">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <link rel="icon" href="{{ url_for('static', filename='img/pydentity-icon.png') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/pydentity-icon.png') }}" type="image/x-icon">
+    <meta name="description" content="">
+    <meta name="twitter:image:src" content="{{ url_for('static', filename='img/pydentity-logo.png') }}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="">
+    <meta name="twitter:description" content="">
+    <meta property="og:image" content="{{ url_for('static', filename='img/pydentity-logo.png') }}">
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="640">
+    <meta property="og:site_name" content="PyDentity">
+    <meta property="og:type" content="object">
+    <meta property="og:title" content="">
+    <meta property="og:url" content="{{ url_for('static', filename='img/pydentity-logo.png') }}">
+    <meta property="og:description" content="">
+    <!-- CSS files -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.1.1/dist/css/tabler.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+    <link rel="manifest" href="{{url_for('manifest')}}">
+    <script>
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register("{{url_for('static', filename='service-worker.js')}}").then(function (registration) {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }, function (err) {
+            console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+
+        :root {
+            --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+        }
+
+        body {
+            font-feature-settings: "cv03", "cv04", "cv11";
+        }
+    </style>
+</head>
