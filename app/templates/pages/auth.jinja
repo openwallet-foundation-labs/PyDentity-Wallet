@@ -2,11 +2,17 @@
 {% block page %}
 <script>
     if (!(/Mobi|Android|iPhone/i.test(navigator.userAgent))) {
-        window.location.replace("{{ session['endpoint'] }}/install");
+        window.location.replace("/install");
     }
 </script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.7.0"></script>
+<script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+<script>
+    const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
+</script>
 
-<div class="container container-tight py-4">
+<div class="container container-tight py-4" onload="accessWallet()">
     <div class="text-center mb-4">
         <a href="." class="navbar-brand navbar-brand-autodark">
             <img width="220px" src="{{ url_for('static', filename='img/pydentity-logo.png') }}">
@@ -24,4 +30,64 @@
         </div>
     </div>
 </div>
+
+
+
+<script>
+    // Get clientId from local storage
+    let clientId = localStorage.getItem('clientId');
+
+    if (clientId) {
+        // If clientId is set, create login request
+        const endpoint = `{{ url_for("auth.login") }}?client_id=${clientId}`
+        $.get(endpoint,
+            function (data, status) {
+                document.getElementById('start-auth').addEventListener('click', async () => {
+                    const asseResp = await startAuthentication({ optionsJSON: data });
+                    $('#auth-loading').removeAttr("hidden");
+                    const verificationResp = await fetch(endpoint, {
+                        method: 'POST',
+                        body: JSON.stringify(asseResp),
+                    })
+
+                    const verificationJSON = await verificationResp.json();
+
+                    if (verificationJSON && verificationJSON.verified) {
+                        window.location.replace("{{url_for('main.index')}}");
+                    } else {
+                        alert("login failed")
+                        console.error(verificationJSON)
+                    }
+                })
+            });
+    } else {
+        // If no clientId is set, we register a login credential and provision a new wallet.
+        const endpoint = '{{ url_for("auth.register") }}';
+        $.get(endpoint,
+            function (data, status) {
+                document.getElementById('start-auth').addEventListener('click', async () => {
+                    const attResp = await startRegistration({ optionsJSON: data });
+                    $('#auth-loading').removeAttr("hidden");
+                    const verificationResp = await fetch(endpoint, {
+                        method: 'POST',
+                        body: JSON.stringify(attResp)
+                    });
+                    const verificationJSON = await verificationResp.json();
+
+                    if (verificationJSON && verificationJSON.verified) {
+                        clientId = verificationJSON.client_id;
+                        localStorage.setItem('clientId', clientId);
+                        window.location.replace("{{url_for('main.index')}}");
+                    } else {
+                        alert("Failure");
+                    }
+                });
+            });
+    }
+    setTimeout(function() {
+        document.getElementById('start-auth').click();
+    }, 500);
+</script>
+
+
 {% endblock %}

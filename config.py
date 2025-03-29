@@ -15,7 +15,9 @@ class Config(object):
     DOMAIN = os.getenv("DOMAIN", "localhost")
 
     APP_NAME = "PyDentity Wallet"
-    APP_URL = os.getenv("DOMAIN", f"https://{DOMAIN}")
+    
+    # https is recommended for PWA
+    APP_URL = os.getenv("APP_URL", f"https://{DOMAIN}")
 
     PROJECT_URL = "https://github.com/openwallet-foundation-labs/PyDentity-Wallet"
 
@@ -33,6 +35,9 @@ class Config(object):
         SESSION_TYPE = "cachelib"
         SESSION_SERIALIZATION_FORMAT = "json"
         SESSION_CACHELIB = FileSystemCache(threshold=500, cache_dir="session")
+    
+    AGENT_ADMIN_API_KEY = os.getenv('AGENT_ADMIN_API_KEY')
+    AGENT_ADMIN_ENDPOINT = os.getenv('AGENT_ADMIN_ENDPOINT')
 
     SESSION_COOKIE_NAME = "PyDentity"
     SESSION_COOKIE_SAMESITE = "Strict"

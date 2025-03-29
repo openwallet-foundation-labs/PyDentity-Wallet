@@ -1,6 +1,5 @@
 from flask import (
     Flask,
-    url_for,
     jsonify,
     render_template,
 )
@@ -22,22 +21,10 @@ def create_app(config_class=Config):
     @app.route("/manifest.json")
     @app.route("/manifest.webmanifest")
     def manifest():
-        # with open("app/static/manifest.json", "r") as f:
-        #     manifest_content = json.loads(f.read())
-        # manifest_content['scope'] = Config.ENDPOINT
-        # manifest_content['start_url'] = Config.ENDPOINT
-        # return jsonify(manifest_content)
-        return jsonify(
-            render_template(
-                "manifest.jinja", app_url=Config.APP_URL, app_name=Config.APP_NAME
-            )
-        )
-
-    @app.route("/wallet-workers")
-    def workers():
-        with open(url_for("static", filename="manifest.json")) as f:
-            wallet_workers = json.loads(f.read())
-        return jsonify(wallet_workers)
+        manifest_content = json.loads(render_template(
+            "manifest.jinja", app_url=Config.APP_URL, app_name=Config.APP_NAME
+        ))
+        return jsonify(manifest_content)
 
     @app.route("/install")
     def install():

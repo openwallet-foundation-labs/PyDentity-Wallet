@@ -5,7 +5,7 @@ bp = Blueprint("main", __name__)
 
 @bp.before_request
 def before_request_callback():
-    if "client_id" not in session:
+    if not session.get('client_id'):
         return redirect(url_for("auth.index"))
 
 
