@@ -42,7 +42,7 @@
         const endpoint = `{{ url_for("auth.login") }}?client_id=${clientId}`
         $.get(endpoint,
             function (data, status) {
-                document.getElementById('start-auth').addEventListener('click', async () => {
+                $('#start-auth')[0].addEventListener('click', async () => {
                     const asseResp = await startAuthentication({ optionsJSON: data });
                     $('#auth-loading').removeAttr("hidden");
                     const verificationResp = await fetch(endpoint, {
@@ -65,7 +65,7 @@
         const endpoint = '{{ url_for("auth.register") }}';
         $.get(endpoint,
             function (data, status) {
-                document.getElementById('start-auth').addEventListener('click', async () => {
+                $('#start-auth')[0].addEventListener('click', async () => {
                     const attResp = await startRegistration({ optionsJSON: data });
                     $('#auth-loading').removeAttr("hidden");
                     const verificationResp = await fetch(endpoint, {

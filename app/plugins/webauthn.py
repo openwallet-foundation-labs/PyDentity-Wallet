@@ -18,6 +18,7 @@ class WebAuthnProvider:
     def __init__(self):
         self.rp_id = Config.DOMAIN
         self.rp_name = Config.APP_NAME
+        self.origin = Config.APP_URL
         self.challenge_exp = 10 # Challenge expiration minutes
 
     async def prepare_credential_creation(self, client_id, username):
@@ -55,7 +56,7 @@ class WebAuthnProvider:
         auth_verification = webauthn.verify_registration_response(
             credential=registration_credential,
             expected_challenge=expected_challenge,
-            expected_origin=f"https://{self.rp_id}",
+            expected_origin=self.origin,
             expected_rp_id=self.rp_id,
         )
 
@@ -119,7 +120,7 @@ class WebAuthnProvider:
         webauthn.verify_authentication_response(
             credential=authentication_credential,
             expected_challenge=expected_challenge,
-            expected_origin=f"https://{self.rp_id}",
+            expected_origin=self.origin,
             expected_rp_id=self.rp_id,
             credential_public_key=bytes.fromhex(credential['credential_public_key']),
             credential_current_sign_count=credential['current_sign_count']
