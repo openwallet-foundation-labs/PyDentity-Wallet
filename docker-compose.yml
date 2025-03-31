@@ -1,10 +1,26 @@
 ---
+volumes:
+  redis_cache:
+
 services:
 
   pydentity-wallet:
     build: .
     restart: unless-stopped
+    ports:
+     - 5000:5000
     entrypoint: ["python", "main.py"]
     environment:
-      DOMAIN: ${PYDENTITY_WALLET_DOMAIN}
+      PYDENTITY_WALLET_DOMAIN: ${PYDENTITY_WALLET_DOMAIN}
+      PYDENTITY_WALLET_APP_URL: ${PYDENTITY_WALLET_APP_URL}
       SECRET_KEY: ${PYDENTITY_WALLET_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
+      AGENT_ADMIN_API_KEY: ${AGENT_ADMIN_API_KEY}
+      AGENT_ADMIN_ENDPOINT: ${AGENT_ADMIN_ENDPOINT}
+
+  redis:
+    image: redis
+    restart: unless-stopped
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASS}
+    volumes: 
+      - redis_cache:/data

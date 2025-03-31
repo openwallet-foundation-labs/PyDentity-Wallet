@@ -12,16 +12,13 @@ class Config(object):
     DEBUG = True if ENV == "development" else False
     TESTING = True if ENV == "development" else False
 
-    DOMAIN = os.getenv("DOMAIN", "localhost")
-
+    DOMAIN = os.getenv("PYDENTITY_WALLET_DOMAIN", "localhost")
+    APP_URL = os.getenv("PYDENTITY_WALLET_APP_URL", f"https://{DOMAIN}")
     APP_NAME = "PyDentity Wallet"
-    
-    # https is recommended for PWA
-    APP_URL = os.getenv("APP_URL", f"https://{DOMAIN}")
 
     PROJECT_URL = "https://github.com/openwallet-foundation-labs/PyDentity-Wallet"
 
-    SECRET_KEY = os.getenv("SECRET_KEY", "unsecured")
+    SECRET_KEY = os.getenv("PYDENTITY_WALLET_SECRET_KEY", "unsecured")
 
     # Create local storage if no postgres instance available
     ASKAR_DB = os.getenv("ASKAR_DB", "sqlite://app.db")
