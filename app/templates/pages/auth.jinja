@@ -1,10 +1,12 @@
 {% extends('layouts/base.min.jinja') %}
 {% block page %}
+{% if not session.get('development') %}
 <script>
     if (!(/Mobi|Android|iPhone/i.test(navigator.userAgent))) {
         window.location.replace("/install");
     }
 </script>
+{% endif %}
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://unpkg.com/htmx.org@1.7.0"></script>
 <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>

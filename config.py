@@ -23,8 +23,15 @@ class Config(object):
     # Create local storage if no postgres instance available
     ASKAR_DB = os.getenv("ASKAR_DB", "sqlite://app.db")
 
-    SESSION_TYPE = "redis"
-    SESSION_REDIS = redis.from_url(os.getenv("REDIS_URL"))
+    # Create local cache if no redis instance available
+    if os.getenv("REDIS_URL"):
+        SESSION_TYPE = "redis"
+        SESSION_REDIS = redis.from_url(os.getenv("REDIS_URL"))
+    else:
+        Path("session").mkdir(parents=True, exist_ok=True)
+        SESSION_TYPE = "cachelib"
+        SESSION_SERIALIZATION_FORMAT = "json"
+        SESSION_CACHELIB = FileSystemCache(threshold=500, cache_dir="session")
     
     AGENT_ADMIN_API_KEY = os.getenv('AGENT_ADMIN_API_KEY')
     AGENT_ADMIN_ENDPOINT = os.getenv('AGENT_ADMIN_ENDPOINT')

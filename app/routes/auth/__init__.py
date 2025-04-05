@@ -17,15 +17,15 @@ webauthn = WebAuthnProvider()
 def index():
     session.clear()
     session["endpoint"] = Config.APP_URL
+    session["development"] = Config.TESTING
     return render_template("pages/auth.jinja", title=Config.APP_NAME)
 
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == 'GET':
         session['client_id'] = str(uuid.uuid4())
-        return jsonify(
-            await_(webauthn.prepare_credential_creation(session['client_id'], 'PyDentity'))
-        ), 200
+        registration_credential = await_(webauthn.prepare_credential_creation(session['client_id'], 'PyDentity'))
+        return jsonify(registration_credential), 200
 
     elif request.method == 'POST':
         client_id = session.get("client_id")

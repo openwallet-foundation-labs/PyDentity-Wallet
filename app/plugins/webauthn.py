@@ -10,8 +10,8 @@ from webauthn.helpers import base64url_to_bytes
 from webauthn.helpers.structs import RegistrationCredential, AuthenticatorAttestationResponse, AuthenticationCredential, AuthenticatorAssertionResponse
 
 
-REGISTRATION_CHALLENGES = Config.SESSION_REDIS
-AUTHENTICATION_CHALLENGES = Config.SESSION_REDIS
+REGISTRATION_CHALLENGES = Config.SESSION_CACHELIB
+AUTHENTICATION_CHALLENGES = Config.SESSION_CACHELIB
 askar = AskarStorage()
 
 class WebAuthnProvider:
@@ -29,7 +29,8 @@ class WebAuthnProvider:
             user_name=username,
         )
         REGISTRATION_CHALLENGES.set(client_id, public_credential_creation_options.challenge)
-        REGISTRATION_CHALLENGES.expire(client_id, datetime.timedelta(minutes=self.challenge_exp))
+        if Config.SESSION_TYPE == 'redis':
+            REGISTRATION_CHALLENGES.expire(client_id, datetime.timedelta(minutes=self.challenge_exp))
 
         return json.loads(webauthn.options_to_json(public_credential_creation_options))
 
