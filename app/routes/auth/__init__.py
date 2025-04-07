@@ -38,7 +38,11 @@ def register():
                 client_id, 
                 registration_credential
             ))
-            session['token'] = await_(provision_wallet(client_id)).get('token')
+            
+            wallet = await_(provision_wallet(client_id))
+        
+            session['token'] = wallet.get('token')
+            session['wallet_id'] = wallet.get('wallet_id')
             
             return jsonify(
                 {

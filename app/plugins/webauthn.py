@@ -8,10 +8,7 @@ from app.plugins import AskarStorage
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor  
 from webauthn.helpers import base64url_to_bytes
 from webauthn.helpers.structs import RegistrationCredential, AuthenticatorAttestationResponse, AuthenticationCredential, AuthenticatorAssertionResponse
-
-
-REGISTRATION_CHALLENGES = Config.SESSION_CACHELIB
-AUTHENTICATION_CHALLENGES = Config.SESSION_CACHELIB
+    
 askar = AskarStorage()
 
 class WebAuthnProvider:
@@ -28,9 +25,9 @@ class WebAuthnProvider:
             user_id=client_id.encode(),
             user_name=username,
         )
-        REGISTRATION_CHALLENGES.set(client_id, public_credential_creation_options.challenge)
+        Config.REGISTRATION_CHALLENGES.set(client_id, public_credential_creation_options.challenge)
         if Config.SESSION_TYPE == 'redis':
-            REGISTRATION_CHALLENGES.expire(client_id, datetime.timedelta(minutes=self.challenge_exp))
+            Config.REGISTRATION_CHALLENGES.expire(client_id, datetime.timedelta(minutes=self.challenge_exp))
 
         return json.loads(webauthn.options_to_json(public_credential_creation_options))
 
@@ -49,7 +46,7 @@ class WebAuthnProvider:
         
     async def verify_and_save_credential(self, client_id, registration_credential):
         """Verify that a new credential is valid for the """
-        expected_challenge = REGISTRATION_CHALLENGES.get(client_id)
+        expected_challenge = Config.REGISTRATION_CHALLENGES.get(client_id)
         
         # If the credential is somehow invalid (i.e. the challenge is wrong),
         # this will raise an exception. It's easier to handle that in the view
@@ -110,7 +107,7 @@ class WebAuthnProvider:
             ),
             type='public-key',
         )
-        expected_challenge = AUTHENTICATION_CHALLENGES.get(client_id)
+        expected_challenge = Config.AUTHENTICATION_CHALLENGES.get(client_id)
         credential_id = await askar.fetch_name_by_tag(
             'webauthn/credential', {'client_id': client_id})
         credential = await askar.fetch('webauthn/credential', credential_id)
@@ -128,7 +125,7 @@ class WebAuthnProvider:
         )
         
         # After a successful authentication, expire the challenge so it can't be used again.
-        AUTHENTICATION_CHALLENGES.expire(client_id, datetime.timedelta(seconds=1))
+        Config.AUTHENTICATION_CHALLENGES.expire(client_id, datetime.timedelta(seconds=1))
 
         
         # Update the credential sign count after using, then save it back to the database.
