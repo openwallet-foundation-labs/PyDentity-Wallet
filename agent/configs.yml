@@ -5,11 +5,16 @@ inbound-transport:
    - [http, 0:0:0:0:0:0:0:0, 8022]
 outbound-transport: [ws, http]
 
+no-ledger: true
+
 auto-provision: true
 recreate-wallet: false
 
 wallet-type: askar-anoncreds
 wallet-storage-type: postgres_storage
+
+multitenant: true
+multitenant-admin: true
 
 auto-ping-connection: true
 auto-accept-invites: true
@@ -28,12 +33,10 @@ auto-respond-presentation-request: true
 preserve-exchange-records: true
 
 plugin:
-  - webvh
   - connection_update.v1_0
   - basicmessage_storage.v1_0
-  # - multitenant_provider.v1_0
+  - multitenant_provider.v1_0
 
 plugin-config-value:
-  - did-webvh.server_url=https://identifier.me
-  # - multitenant_provider.manager.class_name="multitenant_provider.v1_0.manager.BasicMultitokenMultitenantManager"
-  # - multitenant_provider.manager.always_check_provided_wallet_key=true
+  - multitenant_provider.manager.always_check_provided_wallet_key=true
+  - multitenant_provider.manager.class_name="multitenant_provider.v1_0.manager.BasicMultitokenMultitenantManager"

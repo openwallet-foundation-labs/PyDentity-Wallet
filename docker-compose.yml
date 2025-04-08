@@ -1,10 +1,50 @@
 ---
+volumes:
+  redis_cache:
+  postgres_data:
+
 services:
+
+  agent:
+    build: agent/
+    entrypoint: ["aca-py", "start"]
+    command: [
+      "--arg-file", "configs.yml"
+    ]
+    environment:
+      ACAPY_WALLET_KEY: ${PYDENTITY_WALLET_SECRET_KEY}
+      ACAPY_WALLET_NAME: PyDentity-Admin
+      ACAPY_MULTITENANT_JWT_SECRET: ${AGENT_JWT_SECRET}
+      ACAPY_ADMIN_API_KEY: ${AGENT_ADMIN_API_KEY}
+      ACAPY_WALLET_STORAGE_CONFIG: '{"url":"postgres:5432"}'
+      ACAPY_WALLET_STORAGE_CREDS: '{"account":"${POSTGRES_USER}","password":"${POSTGRES_PASS}","admin_account":"${POSTGRES_USER}", "admin_password":"${POSTGRES_PASS}"}'
 
   pydentity-wallet:
     build: .
     restart: unless-stopped
+    ports:
+     - 5000:5000
     entrypoint: ["python", "main.py"]
     environment:
-      DOMAIN: ${PYDENTITY_WALLET_DOMAIN}
       SECRET_KEY: ${PYDENTITY_WALLET_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
+      PYDENTITY_WALLET_DOMAIN: ${PYDENTITY_WALLET_DOMAIN}
+      PYDENTITY_WALLET_APP_URL: ${PYDENTITY_WALLET_APP_URL}
+      AGENT_ADMIN_ENDPOINT: ${AGENT_ADMIN_ENDPOINT}
+      AGENT_ADMIN_API_KEY: ${AGENT_ADMIN_API_KEY}
+
+  redis:
+    image: redis
+    restart: unless-stopped
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASS}
+    volumes: 
+      - redis_cache:/data
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
