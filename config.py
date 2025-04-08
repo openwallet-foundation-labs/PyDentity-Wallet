@@ -27,14 +27,18 @@ class Config(object):
     if os.getenv("REDIS_URL"):
         SESSION_TYPE = "redis"
         SESSION_REDIS = redis.from_url(os.getenv("REDIS_URL"))
+        REGISTRATION_CHALLENGES = SESSION_REDIS
+        AUTHENTICATION_CHALLENGES = SESSION_REDIS
     else:
         Path("session").mkdir(parents=True, exist_ok=True)
         SESSION_TYPE = "cachelib"
         SESSION_SERIALIZATION_FORMAT = "json"
         SESSION_CACHELIB = FileSystemCache(threshold=500, cache_dir="session")
-
-    AGENT_ADMIN_API_KEY = os.getenv("AGENT_ADMIN_API_KEY")
-    AGENT_ADMIN_ENDPOINT = os.getenv("AGENT_ADMIN_ENDPOINT")
+        REGISTRATION_CHALLENGES = SESSION_CACHELIB
+        AUTHENTICATION_CHALLENGES = SESSION_CACHELIB
+    
+    AGENT_ADMIN_API_KEY = os.getenv('AGENT_ADMIN_API_KEY')
+    AGENT_ADMIN_ENDPOINT = os.getenv('AGENT_ADMIN_ENDPOINT')
 
     SESSION_COOKIE_NAME = "PyDentity"
     SESSION_COOKIE_SAMESITE = "Strict"

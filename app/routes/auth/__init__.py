@@ -52,10 +52,15 @@ def register():
             webauthn.create_registration_credential(json.loads(request.get_data()))
         )
         try:
-            await_(
-                webauthn.verify_and_save_credential(client_id, registration_credential)
-            )
+            await_(webauthn.verify_and_save_credential(
+                client_id, 
+                registration_credential
+            ))
+            
             wallet = await_(provision_wallet(client_id))
+        
+            session['token'] = wallet.get('token')
+            session['wallet_id'] = wallet.get('wallet_id')
             
             session["token"] = wallet['token']
             session["wallet_id"] = wallet['wallet_id']

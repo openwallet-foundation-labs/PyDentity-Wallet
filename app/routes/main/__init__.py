@@ -7,7 +7,7 @@ bp = Blueprint("main", __name__)
 
 @bp.before_request
 def before_request_callback():
-    if not session.get("wallet_id"):
+    if not session.get('wallet_id'):
         return redirect(url_for("auth.index"))
 
 

@@ -5,6 +5,8 @@ inbound-transport:
    - [http, 0:0:0:0:0:0:0:0, 8022]
 outbound-transport: [ws, http]
 
+no-ledger: true
+
 auto-provision: true
 recreate-wallet: false
 
