@@ -21,9 +21,11 @@ def create_app(config_class=Config):
     @app.route("/manifest.json")
     @app.route("/manifest.webmanifest")
     def manifest():
-        manifest_content = json.loads(render_template(
-            "manifest.jinja", app_url=Config.APP_URL, app_name=Config.APP_NAME
-        ))
+        manifest_content = json.loads(
+            render_template(
+                "manifest.jinja", app_url=Config.APP_URL, app_name=Config.APP_NAME
+            )
+        )
         return jsonify(manifest_content)
 
     @app.route("/install")

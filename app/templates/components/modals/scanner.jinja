@@ -1,0 +1,73 @@
+<div class="modal fade" id="scanner-modal" style="display: none;" aria-modal="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Scanner</h5>
+      </div>
+      <div class="modal-body">
+        <center>
+          <div id="qr-loader" class="spinner-border" hidden></div>
+          <div id="qr-reader" style="width:100%;height:100%"></div>
+          <script src="{{url_for('static', filename='js/html5-qrcode.js')}}"></script>
+        </center>
+      </div>
+      <div class="modal-footer">
+        <button onclick="stopScanner()" type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  button {
+    padding: 10px 20px;
+    border: 1px solid #b2b2b2;
+    outline: none;
+    border-radius: 0.25em;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    background-color: #066fd1;
+    transition: 0.3s background-color;
+  }
+
+  button:hover {
+    background-color: #066fd1;
+  }
+
+  #html5-qrcode-anchor-scan-type-change {
+    text-decoration: none !important;
+    color: #1d9bf0;
+  }
+
+  video {
+    width: 100% !important;
+    border: 1px solid #b2b2b2 !important;
+    border-radius: 0.25em;
+  }
+</style>
+<script>
+  function stopScanner() {
+    location.reload();
+  }
+  function startScanner() {
+    function onScanSuccess(decodeText, decodeResult) {
+      scanner.clear();
+      $('#qr-loader').removeAttr("hidden");
+      $.post("{{session['endpoint']}}/scanner",
+        {
+          payload: decodeText,
+        },
+        () => {
+          location.reload();
+        });
+    }
+
+    let scanner = new Html5QrcodeScanner(
+      "qr-reader",
+      { fps: 10, qrbox: 250 }
+    );
+    scanner.render(onScanSuccess);
+  };
+</script>

@@ -32,9 +32,9 @@ class Config(object):
         SESSION_TYPE = "cachelib"
         SESSION_SERIALIZATION_FORMAT = "json"
         SESSION_CACHELIB = FileSystemCache(threshold=500, cache_dir="session")
-    
-    AGENT_ADMIN_API_KEY = os.getenv('AGENT_ADMIN_API_KEY')
-    AGENT_ADMIN_ENDPOINT = os.getenv('AGENT_ADMIN_ENDPOINT')
+
+    AGENT_ADMIN_API_KEY = os.getenv("AGENT_ADMIN_API_KEY")
+    AGENT_ADMIN_ENDPOINT = os.getenv("AGENT_ADMIN_ENDPOINT")
 
     SESSION_COOKIE_NAME = "PyDentity"
     SESSION_COOKIE_SAMESITE = "Strict"

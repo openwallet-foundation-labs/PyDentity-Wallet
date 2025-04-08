@@ -3,6 +3,38 @@
 <div class="page-body">
     <div class="container">
         <div class="row row-deck row-cards">
+            {% for credential in session.get('credentials', []) %}
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-auto">
+                                <span class="avatar avatar-lg" data-bs-toggle="modal"
+                                    data-bs-target="#modal-credential-{{ loop.index }}"
+                                    style="background-image: url({{ credential['issuer']['image'] }})"></span>
+                            </div>
+                            <div class="col">
+                                <h5 class="m-0">
+                                    <a href="#">{{ credential.get('name') or 'No credential name' }}</a>
+                                </h5>
+                                <div class="text-secondary">
+                                    {{ credential['issuer'].get('name') or 'No issuer name' }}
+                                </div>
+                                <div class="small mt-1">
+                                    {% if credential.get('validFrom') %} {{ credential['validFrom'].split('T')[0] }}
+                                    {% else %} No Issuance {% endif %}
+                                    -
+                                    {% if credential.get('validUntil') %} {{ credential['validUntil'].split('T')[0] }}
+                                    {% else %} No Expiration {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
