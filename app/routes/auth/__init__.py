@@ -46,24 +46,27 @@ def register():
     elif request.method == "POST":
         if not session.get("client_id"):
             abort("Error user not found", 400)
-            
-        current_app.logger.warning(f"Prepare registration: {session.get("client_id")}")
+
+        current_app.logger.warning(f"Prepare registration: {session.get('client_id')}")
 
         registration_credential = await_(
             webauthn.create_registration_credential(json.loads(request.get_data()))
         )
         try:
-            await_(webauthn.verify_and_save_credential(
-                session.get("client_id"), 
-                registration_credential
-            ))
-            
-            wallet = await_(provision_wallet(session.get("client_id")))
-        
-            session['token'] = wallet.get('token')
-            session['wallet_id'] = wallet.get('wallet_id')
+            await_(
+                webauthn.verify_and_save_credential(
+                    session.get("client_id"), registration_credential
+                )
+            )
 
-            return jsonify({"verified": True, "client_id": session.get("client_id")}), 201
+            wallet = await_(provision_wallet(session.get("client_id")))
+
+            session["token"] = wallet.get("token")
+            session["wallet_id"] = wallet.get("wallet_id")
+
+            return jsonify(
+                {"verified": True, "client_id": session.get("client_id")}
+            ), 201
 
         except InvalidRegistrationResponse:
             abort(jsonify({"verified": False}), 400)
@@ -87,7 +90,7 @@ def login():
     elif request.method == "POST":
         current_app.logger.warning(f"Verify login: {client_id}")
         profile = await_(askar.fetch("profile", client_id))
-        wallet = await_(askar.fetch("wallet", profile['wallet_id']))
+        wallet = await_(askar.fetch("wallet", profile["wallet_id"]))
         if not profile or not wallet:
             abort(jsonify({"verified": False}), 400)
 
@@ -102,7 +105,7 @@ def login():
 
             session["client_id"] = client_id
             session["token"] = wallet["token"]
-            session["wallet_id"] = wallet['wallet_id']
+            session["wallet_id"] = wallet["wallet_id"]
 
             return jsonify({"verified": True}), 200
 

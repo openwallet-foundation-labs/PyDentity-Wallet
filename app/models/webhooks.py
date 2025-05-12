@@ -8,10 +8,12 @@ class BaseModel(BaseModel):
     def model_dump(self, **kwargs) -> Dict[str, Any]:
         return super().model_dump(by_alias=True, exclude_none=True, **kwargs)
 
+
 class Notification(BaseModel):
     type: str = Field()
     title: str = Field()
     details: dict = Field()
+
 
 class Message(BaseModel):
     content: str = Field()
