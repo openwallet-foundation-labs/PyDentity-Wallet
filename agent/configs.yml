@@ -33,6 +33,7 @@ auto-respond-presentation-request: true
 preserve-exchange-records: true
 
 plugin:
+  - webvh
   - connection_update.v1_0
   - basicmessage_storage.v1_0
   - multitenant_provider.v1_0

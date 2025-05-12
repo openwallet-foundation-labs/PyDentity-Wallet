@@ -102,6 +102,7 @@ class QRScanner:
         if exchange.get('verifiablePresentation'):
             vp = exchange.get('verifiablePresentation')
             for vc in vp['verifiableCredential']:
+                current_app.logger.warning(vc)
                 agent.set_token(wallet['token'])
                 agent.store_credential(vc)
                 
