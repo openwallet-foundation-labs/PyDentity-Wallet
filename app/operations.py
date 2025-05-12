@@ -14,7 +14,8 @@ async def provision_wallet(client_id):
     wallet['wallet_key'] = wallet_key
     agent.set_token(wallet['token'])
     
-    multikey = agent.create_key().get("multikey")
+    did = agent.create_did().get("result").get('did')
+    multikey = did.split(':')[-1]
     
     wallet_id = wallet['wallet_id']
     profile = Profile(
@@ -24,20 +25,20 @@ async def provision_wallet(client_id):
     ).model_dump()
 
     await askar.store("profile", client_id, profile, {})
-    await askar.store("wallet", wallet_id, wallet, {"did": [f"did:key:{multikey}"]})
+    await askar.store("wallet", wallet_id, wallet, {"did": [did]})
     await askar.store("messages", wallet_id, [], {})
     await askar.store("connections", wallet_id, [], {})
     await askar.store("credentials", wallet_id, [], {})
     await askar.store("notifications", wallet_id, [], {})
 
     current_app.logger.warning(f"Configured Wallet: {wallet_id}")
+    current_app.logger.warning(profile)
+    current_app.logger.warning(wallet)
 
     return wallet
 
 async def sync_session(wallet_id):
     # current_app.logger.warning(f"Session Sync: {client_id}")
-    
-    # profile = await askar.fetch('profile', client_id)
     
     session['credentials'] = await askar.fetch('credentials', wallet_id)
     session['connections'] = await askar.fetch('connections', wallet_id)
@@ -51,13 +52,17 @@ async def sync_wallet(wallet_id):
     
     # Update Connections
     connections = []
-    connections.extend(agent.get_connections())
+    connections.extend(agent.get_connections().get('results'))
     await askar.update('connections', wallet_id, connections)
     
     # Update Credentials
     credentials = []
     credentials.extend(
-        template_anoncreds(credential) for credential in agent.get_credentials()
+        template_anoncreds(credential) for credential in agent.get_credentials().get('results')
+        if credential not in credentials
+    )
+    credentials.extend(
+        credential.get('cred_value') for credential in agent.get_w3c_credentials().get('results')
         if credential not in credentials
     )
     await askar.update('credentials', wallet_id, credentials)

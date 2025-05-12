@@ -68,6 +68,18 @@ class AgentController:
             headers=self.tenant_headers,
         )
         return self._try_return(r)
+
+    def create_did(self, method='key', key_type='ed25519'):
+        current_app.logger.warning("Creating did")
+        r = httpx.post(
+            f"{self.admin_endpoint}/wallet/did/create",
+            json={
+                "method": method,
+                "options": {"key_type": key_type}
+            },
+            headers=self.tenant_headers,
+        )
+        return self._try_return(r)
         
     def receive_invitation(self, invitation):
         current_app.logger.warning('Receiving invitation.')
@@ -107,11 +119,29 @@ class AgentController:
         )
         return self._try_return(r)
         
+    def get_w3c_credentials(self):
+        r = httpx.post(
+            f'{self.admin_endpoint}/credentials/w3c',
+            headers=self.tenant_headers,
+            json={}
+        )
+        return self._try_return(r)
+        
     def store_credential(self, vc):
         r = httpx.post(
             f'{self.admin_endpoint}/vc/credentials/store',
             headers=self.tenant_headers,
             json={'verifiableCredential': vc}
         )
-        current_app.logger.warning(r.text)
+        return self._try_return(r)
+        
+    def sign_presentation(self, presentation, options):
+        r = httpx.post(
+            f'{self.admin_endpoint}/vc/presentations/prove',
+            headers=self.tenant_headers,
+            json={
+                'presentation': presentation,
+                'options': options
+            }
+        )
         return self._try_return(r)
