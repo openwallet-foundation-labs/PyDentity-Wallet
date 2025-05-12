@@ -11,6 +11,7 @@ from config import Config
 from app.handlers.errors import bp as errors_bp
 from app.routes.main import bp as main_bp
 from app.routes.auth import bp as auth_bp
+from app.routes.webhooks import bp as webhooks_bp
 import json
 
 
@@ -44,5 +45,6 @@ def create_app(config_class=Config):
     app.register_blueprint(errors_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(webhooks_bp, url_prefix="/webhooks")
 
     return app

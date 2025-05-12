@@ -84,6 +84,9 @@ class WebAuthnProvider:
         credential_id = await askar.fetch_name_by_tag(
             "webauthn/credential", {"client_id": client_id}
         )
+        if not credential_id:
+            return None
+        
         # return user_credentials
         allowed_credentials = [
             PublicKeyCredentialDescriptor(id=bytes.fromhex(credential_id))

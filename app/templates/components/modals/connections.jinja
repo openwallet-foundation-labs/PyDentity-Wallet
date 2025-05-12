@@ -1,0 +1,48 @@
+<div class="modal modal-blur fade" id="modal-connections" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Connections</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    {% for connection in session['connections'] %}
+                    <div class="row g-3 align-items-center">
+                        <a href="#" class="col-auto">
+                            <span class="avatar avatar-2" style="background-image: url({{ connection.get('their_image') }})">
+                            {% if connection.get('state') == 'active' %}
+                                <span class="badge bg-success"></span>
+                            {% else %}
+                                <span class="badge bg-warning"></span>
+                            {% endif %}
+                            </span>
+                        </a>
+                        <div class="col text-truncate">
+                            <a href="#" class="text-reset d-block text-truncate">{{ connection.get('alias') or connection.get('their_label') }}</a>
+                            <div class="text-secondary text-truncate mt-n1">{{ connection.get('state') }}</div>
+                        </div>
+                        <div class="col-auto">
+                            {# <a href="#" class="btn-action">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-message">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M8 9h8" />
+                                    <path d="M8 13h6" />
+                                    <path
+                                        d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z" />
+                                </svg>
+                            </a> #}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link link-secondary w-100" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

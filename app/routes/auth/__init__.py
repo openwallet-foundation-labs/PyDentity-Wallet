@@ -44,28 +44,26 @@ def register():
         return jsonify(registration_credential), 200
 
     elif request.method == "POST":
-        client_id = session.get("client_id")
-        if not client_id:
+        if not session.get("client_id"):
             abort("Error user not found", 400)
+            
+        current_app.logger.warning(f"Prepare registration: {session.get("client_id")}")
 
         registration_credential = await_(
             webauthn.create_registration_credential(json.loads(request.get_data()))
         )
         try:
             await_(webauthn.verify_and_save_credential(
-                client_id, 
+                session.get("client_id"), 
                 registration_credential
             ))
             
-            wallet = await_(provision_wallet(client_id))
+            wallet = await_(provision_wallet(session.get("client_id")))
         
             session['token'] = wallet.get('token')
             session['wallet_id'] = wallet.get('wallet_id')
-            
-            session["token"] = wallet['token']
-            session["wallet_id"] = wallet['wallet_id']
 
-            return jsonify({"verified": True, "client_id": client_id}), 201
+            return jsonify({"verified": True, "client_id": session.get("client_id")}), 201
 
         except InvalidRegistrationResponse:
             abort(jsonify({"verified": False}), 400)
@@ -82,12 +80,15 @@ def login():
     if request.method == "GET":
         current_app.logger.warning(f"Prepare login: {client_id}")
         auth_options = await_(webauthn.prepare_login_with_credential(client_id))
+        if not auth_options:
+            return {}, 404
         return jsonify(auth_options), 200
 
     elif request.method == "POST":
         current_app.logger.warning(f"Verify login: {client_id}")
-        wallet = await_(askar.fetch("wallet", client_id))
-        if not wallet:
+        profile = await_(askar.fetch("profile", client_id))
+        wallet = await_(askar.fetch("wallet", profile['wallet_id']))
+        if not profile or not wallet:
             abort(jsonify({"verified": False}), 400)
 
         attestation = json.loads(request.get_data())

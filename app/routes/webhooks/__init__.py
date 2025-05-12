@@ -1,9 +1,8 @@
 from flask import Blueprint, current_app, request, session
-import asyncio
 from asyncio import run as await_
-from app.services import AskarStorage, AgentController
+from app.plugins import AskarStorage, AgentController, AnonCredsProcessor
 from app.operations import template_anoncreds
-from .models import Message, CredentialOffer, PresentationRequest, Notification
+from app.models.webhooks import Message, CredentialOffer, PresentationRequest, Notification
 from config import Config
 
 bp = Blueprint("webhooks", __name__)
@@ -26,8 +25,10 @@ def before_request_callback():
     
 @bp.route("/topic/connections/", methods=["POST"])
 def topic_connections():
+    print('Webhook Connection')
     current_app.logger.warning('Webhook Connection')
     connection = request.json
+    current_app.logger.warning(connection)
     if connection.get('state') == 'invitation':
         pass
     elif connection.get('state') == 'request':
@@ -41,6 +42,7 @@ def topic_connections():
             title=f'Connected with {connection_name}',
             details=connection
         ).model_dump()
+        await_(askar.append('connections', session['wallet_id'], connection))
         await_(askar.append('notifications', session['wallet_id'], notification))
     else:
         current_app.logger.warning(connection.get('state'))
@@ -50,6 +52,7 @@ def topic_connections():
 def topic_out_of_band():
     current_app.logger.warning('Webhook Out-of-Band')
     out_of_band = request.json
+    current_app.logger.warning(out_of_band)
     if out_of_band.get('state') == 'initial':
         pass
     elif out_of_band.get('state') == 'done':
@@ -63,10 +66,43 @@ def topic_out_of_band():
 @bp.route("/topic/issue_credential/", methods=["POST"])
 def webhook_issue_credential():
     current_app.logger.warning('Webhook Issue Credential')
+    
     cred_ex = request.json
+    anoncreds = AnonCredsProcessor(session['wallet_id'])
     current_app.logger.warning(cred_ex.get('state'))
-    if cred_ex.get('state') == 'offer-received':
+    if cred_ex.get('state') == 'offer_received':
+        await_(agent.set_agent_auth(session['wallet_id']))
+        connection = agent.get_connection_info(cred_ex.get('connection_id'))
+        schema_id = cred_ex.get('schema_id')
+        cred_def_id = cred_ex.get('credential_definition_id')
+        cred_template = {
+            '@context': [
+                'https://www.w3.org/ns/credentials/v2',
+                {'@vocab': 'https://www.w3.org/ns/credentials/undefined-term#'}
+            ],
+            'type': ['VerifiableCredential'],
+            'name': schema_id.split(':')[2].replace('_', ' ').title(),
+            'issuer': {
+                'id': cred_def_id.split('/')[0],
+                'name': connection.get('their_label'),
+                'image': connection.get('image'),
+            },
+            'credentialSubject': {}
+        }
+        await_(askar.store('template', cred_def_id, cred_template))
+        current_app.logger.warning(cred_template)
+    elif cred_ex.get('state') == 'request_sent':
         pass
+    elif cred_ex.get('state') == 'credential_received':
+        pass
+    elif cred_ex.get('state') == 'credential_acked':
+        cred_def_id = cred_ex.get('credential_definition_id')
+        cred_template = await_(askar.fetch('template', cred_def_id))
+        attributes = cred_ex.get('credential_offer_dict').get('credential_preview').get('attributes')
+        for attribute in attributes:
+            cred_template['credentialSubject'][attribute.get('name')] = attribute.get('value')
+        await_(askar.append('credentials', session['wallet_id'], cred_template))
+    return {}, 200
     
 
 @bp.route("/topic/present_proof/", methods=["POST"])
@@ -97,20 +133,20 @@ def webhook_issue_credential_v2_0():
         
         await_(askar.append('cred_ex', cred_ex.get('connection_id'), cred_offer))
         
-
-        schema_id = cred_ex.get('by_format').get('cred_offer').get('anoncreds').get('schema_id')
-        cred_def_id = cred_ex.get('by_format').get('cred_offer').get('anoncreds').get('cred_def_id')
-        
         wallet = await_(askar.fetch('wallet', session['wallet_id']))
         
         agent.set_token(wallet['token'])
         connection = agent.get_connection_info(cred_ex.get('connection_id'))
         
+
+        schema_id = cred_ex.get('by_format').get('cred_offer').get('anoncreds').get('schema_id')
+        cred_def_id = cred_ex.get('by_format').get('cred_offer').get('anoncreds').get('cred_def_id')
+        
         schema = agent.get_schema_info(schema_id).get('schema')
         
+        cred_name = schema.get('name')
         issuer_id = cred_def_id.split('/')[0]
         issuer_name = connection.get('their_label')
-        cred_name = schema.get('name')
         
         cred_template = {
             '@context': [
