@@ -135,25 +135,4 @@ class QRScanner:
         agent.set_token(wallet['token'])
         if agent.store_credential(credential).get('verifiableCredential'):
             await askar.append('credentials', self.wallet_id, credential)
-        
-        # r = requests.get(payload, headers={'Accept': 'application/vc+jwt'})
-        # jwt_vc = r.text
-        # credential = decode_jwt_vc(jwt_vc)
-        # envelope = {
-        #     "@context": "https://www.w3.org/ns/credentials/v2",
-        #     "type": "EnvelopedVerifiableCredential",
-        #     "id": f"data:application/vc+jwt,{jwt_vc}",
-        #     'name': credential.get('name'),
-        #     'issuer': credential.get('issuer'),
-        #     'validFrom': credential.get('validFrom'),
-        #     'validUntil': credential.get('validUntil'),
-        # }
-        # await askar.append('credentials', self.wallet_id, envelope)
-        
-        
-        # await agent.set_agent_auth(self.wallet_id)
-        # vc = agent.store_credential(credential).get('verifiableCredential')
-        # current_app.logger.warning(vc)
-        # if vc:
-        #     await askar.append('credentials', self.wallet_id, vc)
                 
