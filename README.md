@@ -20,7 +20,7 @@ To get started quickly, you can leverage the development agent available and an 
 - Free NGROK account and auth token
 - Docker installed
 
-Clone this repository, then create your .env file:
+Clone this repository, then create your `.env` file:
 ```bash
 git clone git@github.com:openwallet-foundation-labs/PyDentity-Wallet.git
 cd PyDentity-Wallet
@@ -28,12 +28,7 @@ cp .env.example .env
 
 ```
 
-Fill the `.env` file with your NGROK token and the following values:
-```bash
-AGENT_ADMIN_API_KEY=pydentity
-AGENT_ADMIN_ENDPOINT=https://admin.dev.pydentity.net
-NGROK_AUTHTOKEN=enter-ngrok-token
-```
+Update the `.env` file with your NGROK token.
 
 Build the image and run the server:
 ```
