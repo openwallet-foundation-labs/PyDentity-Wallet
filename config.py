@@ -1,8 +1,10 @@
 import redis
 import os
+import ngrok
 from pathlib import Path
 from dotenv import load_dotenv
 from cachelib.file import FileSystemCache
+from qrcode import QRCode
 
 load_dotenv()
 
@@ -13,7 +15,7 @@ class Config(object):
     TESTING = True if ENV == "development" else False
 
     DOMAIN = os.getenv("PYDENTITY_WALLET_DOMAIN", "localhost")
-    APP_URL = os.getenv("PYDENTITY_WALLET_APP_URL", f"https://{DOMAIN}")
+    APP_URL = os.getenv("PYDENTITY_WALLET_APP_URL", "https://localhost:5000")
     APP_NAME = "PyDentity Wallet"
 
     PROJECT_URL = "https://github.com/openwallet-foundation-labs/PyDentity-Wallet"
@@ -45,3 +47,12 @@ class Config(object):
     SESSION_COOKIE_HTTPONLY = "True"
 
     JSONIFY_PRETTYPRINT_REGULAR = True
+    
+    NGROK_AUTHTOKEN = os.getenv('NGROK_AUTHTOKEN', None)
+    if NGROK_AUTHTOKEN:
+        listener = ngrok.werkzeug_develop()
+        APP_URL = listener.url()
+        DOMAIN = APP_URL.split('https://')[-1]
+        qr = QRCode(box_size=10, border=4)
+        qr.add_data(listener.url())
+        qr.print_ascii()
