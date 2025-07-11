@@ -5,18 +5,24 @@ import base64
 from config import Config
 from app.models.webauthn import WebAuthnCredential
 from app.plugins import AskarStorage
-from webauthn.helpers.structs import PublicKeyCredentialDescriptor  
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 from webauthn.helpers import base64url_to_bytes
-from webauthn.helpers.structs import RegistrationCredential, AuthenticatorAttestationResponse, AuthenticationCredential, AuthenticatorAssertionResponse
-    
+from webauthn.helpers.structs import (
+    RegistrationCredential,
+    AuthenticatorAttestationResponse,
+    AuthenticationCredential,
+    AuthenticatorAssertionResponse,
+)
+
 askar = AskarStorage()
+
 
 class WebAuthnProvider:
     def __init__(self):
         self.rp_id = Config.DOMAIN
         self.rp_name = Config.APP_NAME
         self.origin = Config.APP_URL
-        self.challenge_exp = 10 # Challenge expiration minutes
+        self.challenge_exp = 10  # Challenge expiration minutes
 
     async def prepare_credential_creation(self, client_id, username):
         public_credential_creation_options = webauthn.generate_registration_options(

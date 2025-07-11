@@ -1,8 +1,21 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, abort, jsonify, current_app
+from flask import (
+    Blueprint,
+    render_template,
+    session,
+    redirect,
+    url_for,
+    request,
+    abort,
+    jsonify,
+    current_app,
+)
 from config import Config
 from app.plugins import AgentController, AskarStorage, WebAuthnProvider
 from app.operations import provision_wallet
-from webauthn.helpers.exceptions import InvalidRegistrationResponse, InvalidAuthenticationResponse
+from webauthn.helpers.exceptions import (
+    InvalidRegistrationResponse,
+    InvalidAuthenticationResponse,
+)
 from asyncio import run as await_
 import uuid
 import json
@@ -47,7 +60,10 @@ def register():
             )
 
             wallet = await_(provision_wallet(session.get("client_id")))
-            session["token"], session["wallet_id"] = wallet.get("token"), wallet.get("wallet_id")
+            session["token"], session["wallet_id"] = (
+                wallet.get("token"),
+                wallet.get("wallet_id"),
+            )
 
             return jsonify(
                 {"verified": True, "client_id": session.get("client_id")}
@@ -88,7 +104,7 @@ def login():
             ).get("token")
             await_(askar.update("wallet", client_id, wallet))
 
-            session["client_id"], session["wallet_id"] = client_id,  wallet["wallet_id"]
+            session["client_id"], session["wallet_id"] = client_id, wallet["wallet_id"]
 
             return jsonify({"verified": True}), 200
 

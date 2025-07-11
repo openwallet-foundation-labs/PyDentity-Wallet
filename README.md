@@ -13,8 +13,34 @@ PyDentity Wallet is a Python-based Progressive Web Application (PWA) designed to
 PyDentity Wallet is currently in the **Labs** stage under the OpenWallet Foundation. The project is actively developed as an open-source initiative to enhance the usability of decentralized identity solutions.
 
 ## Usage
-### Pre requisite
-Before deploying the PyDentity Wallet app, you must have a multitenant acapy instance available. There are example configurations in this repository, otherwise refer to the official acapy documentation.
+### Development
+To get started quickly, you can leverage the development agent available and an ngrok tunnel for the server.
+
+### Pre-requisites
+- Free NGROK account and auth token
+- Docker installed
+
+Clone this repository, then create your .env file:
+```bash
+git clone git@github.com:openwallet-foundation-labs/PyDentity-Wallet.git
+cd PyDentity-Wallet
+cp .env.example .env
+
+```
+
+Fill the `.env` file with your NGROK token and the following values:
+```bash
+AGENT_ADMIN_API_KEY=pydentity
+AGENT_ADMIN_ENDPOINT=https://admin.dev.pydentity.net
+NGROK_AUTHTOKEN=enter-ngrok-token
+```
+
+Build the image and run the server:
+```
+docker build --tag pydentity-wallet --file docker/Dockerfile .
+docker run --env-file .env pydentity-wallet
+
+```
 
 - **Connecting to ACA-Py**: Enter your ACA-Py instance details to authenticate and access wallet functionality.
 - **Managing Credentials**: Store, view, and share verifiable credentials securely.

@@ -38,21 +38,21 @@ class Config(object):
         SESSION_CACHELIB = FileSystemCache(threshold=500, cache_dir="session")
         REGISTRATION_CHALLENGES = SESSION_CACHELIB
         AUTHENTICATION_CHALLENGES = SESSION_CACHELIB
-    
-    AGENT_ADMIN_API_KEY = os.getenv('AGENT_ADMIN_API_KEY')
-    AGENT_ADMIN_ENDPOINT = os.getenv('AGENT_ADMIN_ENDPOINT')
+
+    AGENT_ADMIN_API_KEY = os.getenv("AGENT_ADMIN_API_KEY")
+    AGENT_ADMIN_ENDPOINT = os.getenv("AGENT_ADMIN_ENDPOINT")
 
     SESSION_COOKIE_NAME = "PyDentity"
     SESSION_COOKIE_SAMESITE = "Strict"
     SESSION_COOKIE_HTTPONLY = "True"
 
     JSONIFY_PRETTYPRINT_REGULAR = True
-    
-    NGROK_AUTHTOKEN = os.getenv('NGROK_AUTHTOKEN', None)
+
+    NGROK_AUTHTOKEN = os.getenv("NGROK_AUTHTOKEN", None)
     if NGROK_AUTHTOKEN:
         listener = ngrok.werkzeug_develop()
         APP_URL = listener.url()
-        DOMAIN = APP_URL.split('https://')[-1]
+        DOMAIN = APP_URL.split("https://")[-1]
         qr = QRCode(box_size=10, border=4)
         qr.add_data(listener.url())
         qr.print_ascii()
