@@ -42,9 +42,7 @@ docker run --env-file .env pydentity-wallet
 
 ```
 
-- **Connecting to ACA-Py**: Enter your ACA-Py instance details to authenticate and access wallet functionality.
-- **Managing Credentials**: Store, view, and share verifiable credentials securely.
-- **Interacting with DIDs**: Establish and manage secure DID-based connections.
+You should see a QR code displayed in the console. This is your ngrok endpoint. Scan this with a mobile phone to access the wallet app.
 
 ### Creating an instance
 - Upon your first visit to the app domain, you will be prompted to create a webauthn login credential. Fingerprint binding is our recommended method.
