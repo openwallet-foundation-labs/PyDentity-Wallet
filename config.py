@@ -53,6 +53,7 @@ class Config(object):
         listener = ngrok.werkzeug_develop()
         APP_URL = listener.url()
         DOMAIN = APP_URL.split("https://")[-1]
+        print(APP_URL)
         qr = QRCode(box_size=10, border=4)
         qr.add_data(listener.url())
         qr.print_ascii()
