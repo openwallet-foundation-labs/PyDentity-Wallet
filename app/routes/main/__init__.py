@@ -10,7 +10,6 @@ from flask import (
 )
 from app.plugins import QRScanner
 from asyncio import run as await_
-from time import sleep
 
 bp = Blueprint("main", __name__)
 
@@ -33,5 +32,4 @@ def scan_qr_code():
     current_app.logger.warning(session["wallet_id"])
     qr_scanner = QRScanner(session["client_id"], session["wallet_id"])
     await_(qr_scanner.handle_payload(request.form["payload"]))
-    sleep(2)
     return jsonify({"status": "ok"})
