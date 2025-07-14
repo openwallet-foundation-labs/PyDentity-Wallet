@@ -3,6 +3,8 @@
 session/
 app.db
 .ruff_cache/
+.python-version
+*.lock
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
