@@ -31,6 +31,8 @@ def index():
     session.clear()
     session["endpoint"] = Config.APP_URL
     session["development"] = Config.TESTING
+    session["app_icon"] = Config.APP_ICON
+    session["app_logo"] = Config.APP_LOGO
     if Config.ENV == 'development':
         # For development, we bypass the webauthn auth flow
         session["client_id"] = str(uuid.uuid4())
