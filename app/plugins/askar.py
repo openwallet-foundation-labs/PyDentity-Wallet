@@ -91,3 +91,12 @@ class AskarStorage:
                 )
         except:
             return False
+
+
+    async def client_wallet(self, client_id):
+        store = await self.open()
+        async with store.session() as session:
+            profile_entry = await session.fetch('profile', client_id)
+            wallet_id = profile_entry.value.get('wallet_id')
+            wallet_entry = await session.fetch('wallet', wallet_id)
+        return wallet_entry.value
