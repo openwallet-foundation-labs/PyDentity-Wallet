@@ -30,6 +30,6 @@ def index():
 @bp.route("/scanner", methods=["POST"])
 def scan_qr_code():
     current_app.logger.warning("QR Scanner")
-    qr_scanner = QRScanner(session["client_id"])
+    qr_scanner = QRScanner(session["wallet_id"])
     await_(qr_scanner.handle_payload(request.form["payload"]))
     return jsonify({"status": "ok"})

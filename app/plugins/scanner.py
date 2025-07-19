@@ -7,8 +7,8 @@ from urllib.parse import urlparse
 
 
 class QRScanner:
-    def __init__(self, client_id):
-        self.client_id = client_id
+    def __init__(self, wallet_id):
+        self.wallet_id = wallet_id
 
     async def handle_payload(self, payload):
         current_app.logger.warning("Parsing payload")
@@ -25,7 +25,7 @@ class QRScanner:
         protocols = r.json().get('protocols')
         if protocols.get('vcapi', None):
             current_app.logger.warning("VC API Exchange")
-            vcapi = VcApiExchanger(self.client_id, protocols.get('vcapi'))
+            vcapi = VcApiExchanger(self.wallet_id, protocols.get('vcapi'))
             exchange = vcapi.initiate_exchange()
             if exchange.get('verifiablePresentation', None):
                 current_app.logger.warning("Verifiable Presentation")

@@ -1,5 +1,6 @@
 import requests
 import uuid
+import json
 from datetime import datetime
 from app.plugins.acapy import AgentController
 from app.plugins.askar import AskarStorage
@@ -9,8 +10,8 @@ agent = AgentController()
 askar = AskarStorage()
 
 class VcApiExchanger:
-    def __init__(self, client_id=None, exchange_url=None):
-        self.client_id = client_id
+    def __init__(self, wallet_id=None, exchange_url=None):
+        self.wallet_id = wallet_id
         self.exchange_url = exchange_url
     
     def initiate_exchange(self):
@@ -18,19 +19,21 @@ class VcApiExchanger:
         return r.json()
     
     async def store_credential(self, vp):
-        profile = await askar.fetch("profile", self.client_id)
-        wallet_id = profile.get('wallet_id')
-        # TODO, verify presentation
+        wallet = await askar.fetch("wallet", self.wallet_id)
         for vc in vp.get('verifiableCredential'):
-            # tags = {
-            #     'type': vc.get('type'),
-            #     'context': vc.get('@context'),
-            #     'cryptosuites': []
-            # }
-            # TODO, verify credential
-            # TODO, remove unverifiable proofs and store credential
-            await askar.append("credentials", wallet_id, vc)
+            
+            agent.set_token(
+                agent.request_token(self.wallet_id, wallet.get('wallet_key')).get('token')
+            )
+            
+            # TODO, verify credential & remove unverifiable proofs
+            # We store the VC in the cloud agent
+            agent.store_credential(vc)
+            
+            # We store the VC in the server store
+            await askar.append("credentials", self.wallet_id, vc)
         
+            # We create an event notification
             notification = Notification(
                 id=str(uuid.uuid4()),
                 type='vcapi_exchange',
@@ -39,12 +42,10 @@ class VcApiExchanger:
                 message='Credential Stored',
                 timestamp=str(datetime.now().isoformat())
             )
-            await askar.append("notifications", wallet_id, notification)
+            await askar.append("notifications", self.wallet_id, notification)
     
     async def present_credential(self, vpr):
-        profile = await askar.fetch("profile", self.client_id)
-        wallet_id = profile.get('wallet_id')
-        wallet = await askar.fetch("wallet", wallet_id)
+        wallet = await askar.fetch("wallet", self.wallet_id)
         
         # Start building presentation object
         presentation = {
@@ -63,7 +64,7 @@ class VcApiExchanger:
         
         # TODO, implement tag query for credential selection
         # Get all credentials from wallet
-        credentials = await askar.fetch("credentials", wallet_id)
+        credentials = await askar.fetch("credentials", self.wallet_id)
         for query in vpr.get('query'):
             if query.get('type') == 'DIDAuthentication':
                 
@@ -73,8 +74,8 @@ class VcApiExchanger:
                 if 'key' not in methods:
                     return
                 
-                multikey = profile.get('multikey')
-                presentation['holder'] = f'did:key:{multikey}'
+                presentation['holder'] = wallet['holder_id']
+                multikey = presentation['holder'].split(':')[-1]
                 proof_options['verificationMethod'] = f'did:key:{multikey}#{multikey}'
                 
             if query.get('type') == 'QueryByExample':
@@ -128,15 +129,19 @@ class VcApiExchanger:
                     continue
                 
         # We sign the presentation
-        token = agent.request_token(wallet_id, wallet.get('wallet_key')).get('token')
-        agent.set_token(token)
+        agent.set_token(
+            agent.request_token(self.wallet_id, wallet.get('wallet_key')).get('token')
+        )
         vp = agent.sign_presentation(presentation, proof_options).get('verifiablePresentation')
-        r = requests.post(self.exchange_url, json=vp)
+                
+        # We send the verifiable presentation to the exchange endpoint
+        r = requests.post(self.exchange_url, json={'verifiablePresentation': vp})
         
-        # TODO, fix presentation
-        print(r.text)
+        # If the response fails, we abandon the exchange
+        if r.status_code != 200:
+            return
         
-        # TODO, what if multiple reason / credentials presented?
+        # We store an event notification of the presentation exchange
         notification = Notification(
             id=str(uuid.uuid4()),
             type='vcapi_exchange',
@@ -145,4 +150,4 @@ class VcApiExchanger:
             message=reason,
             timestamp=str(datetime.now().isoformat())
         )
-        await askar.append("notifications", wallet_id, notification)
+        await askar.append("notifications", self.wallet_id, notification)

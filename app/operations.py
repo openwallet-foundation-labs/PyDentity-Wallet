@@ -12,17 +12,16 @@ async def provision_wallet(client_id):
     wallet = agent.create_subwallet(client_id, wallet_key) | {"wallet_key": wallet_key}
     agent.set_token(wallet["token"])
 
-    did = agent.create_did().get("result").get('did')
-    multikey = did.split(':')[-1]
+    wallet['holder_id'] = agent.create_did().get("result").get('did')
     # multikey = agent.create_key().get("multikey")
 
     wallet_id = wallet["wallet_id"]
     profile = Profile(
-        client_id=client_id, wallet_id=wallet_id, multikey=multikey
+        client_id=client_id, wallet_id=wallet_id, multikey=wallet['holder_id'].split(':')[-1]
     ).model_dump()
 
     await askar.store("profile", client_id, profile, {})
-    await askar.store("wallet", wallet_id, wallet, {"did": [f"did:key:{multikey}"]})
+    await askar.store("wallet", wallet_id, wallet, {"did": [wallet['holder_id']]})
     await askar.store("messages", wallet_id, [], {})
     await askar.store("connections", wallet_id, [], {})
     await askar.store("credentials", wallet_id, [], {})
