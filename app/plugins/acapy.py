@@ -62,12 +62,7 @@ class AgentController:
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/wallet/did/create",
-                json={
-                    "method": "key",
-                    'options': {
-                        'key_type': 'ed25519'
-                    }
-                },
+                json={"method": "key", "options": {"key_type": "ed25519"}},
                 headers=self.tenant_headers,
             )
         )
@@ -77,9 +72,7 @@ class AgentController:
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/vc/credentials/store",
-                json={
-                    "verifiableCredential": credential
-                },
+                json={"verifiableCredential": credential},
                 headers=self.tenant_headers,
             )
         )
@@ -98,10 +91,7 @@ class AgentController:
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/vc/presentations/prove",
-                json={
-                    "presentation": presentation,
-                    "options": options
-                },
+                json={"presentation": presentation, "options": options},
                 headers=self.tenant_headers,
             )
         )

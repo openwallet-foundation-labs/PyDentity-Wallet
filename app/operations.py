@@ -12,16 +12,18 @@ async def provision_wallet(client_id):
     wallet = agent.create_subwallet(client_id, wallet_key) | {"wallet_key": wallet_key}
     agent.set_token(wallet["token"])
 
-    wallet['holder_id'] = agent.create_did().get("result").get('did')
+    wallet["holder_id"] = agent.create_did().get("result").get("did")
     # multikey = agent.create_key().get("multikey")
 
     wallet_id = wallet["wallet_id"]
     profile = Profile(
-        client_id=client_id, wallet_id=wallet_id, multikey=wallet['holder_id'].split(':')[-1]
+        client_id=client_id,
+        wallet_id=wallet_id,
+        multikey=wallet["holder_id"].split(":")[-1],
     ).model_dump()
 
     await askar.store("profile", client_id, profile, {})
-    await askar.store("wallet", wallet_id, wallet, {"did": [wallet['holder_id']]})
+    await askar.store("wallet", wallet_id, wallet, {"did": [wallet["holder_id"]]})
     await askar.store("messages", wallet_id, [], {})
     await askar.store("connections", wallet_id, [], {})
     await askar.store("credentials", wallet_id, [], {})
@@ -34,13 +36,12 @@ async def provision_wallet(client_id):
 
 async def sync_wallet(client_id):
     # Refresh token
-    profile = await askar.fetch('profile', client_id)
-    wallet = await askar.fetch('wallet', profile.get('wallet_id'))
-    wallet['token'] = agent.request_token(
-        wallet.get('wallet_id'), 
-        wallet.get('wallet_key')
+    profile = await askar.fetch("profile", client_id)
+    wallet = await askar.fetch("wallet", profile.get("wallet_id"))
+    wallet["token"] = agent.request_token(
+        wallet.get("wallet_id"), wallet.get("wallet_key")
     )
-    agent.set_token(wallet['token'])
+    agent.set_token(wallet["token"])
 
     # Update Credentials
     credentials = []
@@ -49,12 +50,12 @@ async def sync_wallet(client_id):
         for credential in agent.fetch_credentials().get("results")
         if credential not in credentials
     )
-    await askar.update("credentials", wallet.get('wallet_id'), credentials)
+    await askar.update("credentials", wallet.get("wallet_id"), credentials)
 
 
 async def sync_session(client_id):
-    profile = await askar.fetch('profile', client_id)
-    wallet_id = profile.get('wallet_id')
+    profile = await askar.fetch("profile", client_id)
+    wallet_id = profile.get("wallet_id")
     session["credentials"] = await askar.fetch("credentials", wallet_id)
     session["connections"] = await askar.fetch("connections", wallet_id)
     session["notifications"] = await askar.fetch("notifications", wallet_id)
