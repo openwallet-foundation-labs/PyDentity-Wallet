@@ -10,20 +10,20 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="HandheldFriendly" content="True">
     <meta name="MobileOptimized" content="320">
-    <link rel="icon" href="{{ url_for('static', filename='img/pydentity-icon.png') }}" type="image/x-icon">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='img/pydentity-icon.png') }}" type="image/x-icon">
+    <link rel="icon" href="{{ session['app_icon'] }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ session['app_icon'] }}" type="image/x-icon">
     <meta name="description" content="">
-    <meta name="twitter:image:src" content="{{ url_for('static', filename='img/pydentity-logo.png') }}">
+    <meta name="twitter:image:src" content="{{ session['app_logo'] }}">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="">
     <meta name="twitter:description" content="">
-    <meta property="og:image" content="{{ url_for('static', filename='img/pydentity-logo.png') }}">
+    <meta property="og:image" content="{{ session['app_logo'] }}">
     <meta property="og:image:width" content="1280">
     <meta property="og:image:height" content="640">
     <meta property="og:site_name" content="PyDentity">
     <meta property="og:type" content="object">
     <meta property="og:title" content="">
-    <meta property="og:url" content="{{ url_for('static', filename='img/pydentity-logo.png') }}">
+    <meta property="og:url" content="{{ session['app_logo'] }}">
     <meta property="og:description" content="">
     <!-- CSS files -->
     <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.1.1/dist/css/tabler.min.css" rel="stylesheet">

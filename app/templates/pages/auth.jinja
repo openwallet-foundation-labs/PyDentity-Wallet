@@ -17,7 +17,7 @@
 <div class="container container-tight py-4" onload="accessWallet()">
     <div class="text-center mb-4">
         <a href="." class="navbar-brand navbar-brand-autodark">
-            <img width="220px" src="{{ url_for('static', filename='img/pydentity-logo.png') }}">
+            <img width="220px" src="{{ session['app_logo'] }}">
         </a>
     </div>
     <div id="loading-access" class="progress progress-sm" style="display: none;">
