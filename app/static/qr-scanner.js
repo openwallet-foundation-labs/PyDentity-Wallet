@@ -28,6 +28,7 @@ function sleep(ms) {
 }
 
 function stopScanner() {
+    document.getElementById("video").srcObject = null;
     location.reload();
 }
 
