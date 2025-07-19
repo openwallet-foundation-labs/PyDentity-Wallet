@@ -33,7 +33,7 @@ def index():
     session["development"] = Config.TESTING
     session["app_icon"] = Config.APP_ICON
     session["app_logo"] = Config.APP_LOGO
-    if Config.ENV == 'development':
+    if Config.ENV == "development":
         # For development, we bypass the webauthn auth flow
         session["client_id"] = str(uuid.uuid4())
         wallet = await_(provision_wallet(session.get("client_id")))
@@ -41,7 +41,7 @@ def index():
             wallet.get("token"),
             wallet.get("wallet_id"),
         )
-        return redirect(url_for('main.index'))
+        return redirect(url_for("main.index"))
     return render_template("pages/auth.jinja", title=Config.APP_NAME)
 
 

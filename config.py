@@ -15,10 +15,16 @@ class Config(object):
     TESTING = True if ENV == "development" else False
 
     DOMAIN = os.getenv("PYDENTITY_WALLET_DOMAIN", "localhost")
-    APP_URL = os.getenv("PYDENTITY_WALLET_APP_URL", "https://localhost:5000")
+    APP_URL = os.getenv("PYDENTITY_WALLET_APP_URL", "http://localhost:5000")
     APP_NAME = os.getenv("PYDENTITY_WALLET_APP_NAME", "PyDentity Wallet")
-    APP_ICON = os.getenv("PYDENTITY_WALLET_APP_ICON", "PyDentity Wallet")
-    APP_LOGO = os.getenv("PYDENTITY_WALLET_APP_LOGO", "PyDentity Wallet")
+    APP_ICON = os.getenv(
+        "PYDENTITY_WALLET_APP_ICON",
+        "https://raw.githubusercontent.com/openwallet-foundation-labs/PyDentity-Wallet/refs/heads/main/assets/pydentity-icon.png",
+    )
+    APP_LOGO = os.getenv(
+        "PYDENTITY_WALLET_APP_LOGO",
+        "https://raw.githubusercontent.com/openwallet-foundation-labs/PyDentity-Wallet/refs/heads/main/assets/pydentity-logo.png",
+    )
 
     PROJECT_URL = "https://github.com/openwallet-foundation-labs/PyDentity-Wallet"
 
