@@ -1,6 +1,5 @@
 import requests
 import uuid
-import json
 from datetime import datetime
 from app.plugins.acapy import AgentController
 from app.plugins.askar import AskarStorage
@@ -45,7 +44,7 @@ class VcApiExchanger:
                 else vc["issuer"]["id"],
                 message="Credential Stored",
                 timestamp=str(datetime.now().isoformat()),
-            )
+            ).model_dump()
             await askar.append("notifications", self.wallet_id, notification)
 
     async def present_credential(self, vpr):
@@ -167,5 +166,5 @@ class VcApiExchanger:
             origin=vpr.get("domain"),
             message=reason,
             timestamp=str(datetime.now().isoformat()),
-        )
+        ).model_dump()
         await askar.append("notifications", self.wallet_id, notification)

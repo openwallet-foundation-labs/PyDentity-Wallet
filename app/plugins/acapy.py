@@ -12,7 +12,7 @@ class AgentController:
     def _try_return(self, response):
         try:
             return response.json()
-        except:
+        except (ValueError, requests.exceptions.RequestException):
             current_app.logger.warning(response.status_code)
             current_app.logger.warning(response.text)
             return None

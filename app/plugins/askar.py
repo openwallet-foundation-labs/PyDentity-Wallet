@@ -1,4 +1,4 @@
-from aries_askar import Store
+from aries_askar import Store, AskarError
 import hashlib
 import logging
 import json
@@ -27,7 +27,7 @@ class AskarStorage:
             async with store.session() as session:
                 entry = await session.fetch(category, data_key)
             return json.loads(entry.value)
-        except:
+        except (AskarError, ValueError, KeyError):
             return None
 
     async def fetch_name_by_tag(self, category, tags):
@@ -36,7 +36,7 @@ class AskarStorage:
             async with store.session() as session:
                 entries = await session.fetch_all(category, tags)
             return entries.handle.get_name(0)
-        except:
+        except (AskarError, IndexError):
             return None
 
     async def fetch_entry_by_tag(self, category, tags):
@@ -46,7 +46,7 @@ class AskarStorage:
                 entries = await session.fetch_all(category, tags)
                 entries = entries.handle.get_value(0)
             return json.loads(entries)
-        except:
+        except (AskarError, ValueError, IndexError):
             return None
 
     async def store(self, category, data_key, data, tags=None):
@@ -60,7 +60,7 @@ class AskarStorage:
                     json.dumps(data),
                     tags,
                 )
-        except:
+        except (AskarError, ValueError):
             return False
 
     async def append(self, category, data_key, data, tags=None):
@@ -76,7 +76,7 @@ class AskarStorage:
                     json.dumps(entries),
                     tags,
                 )
-        except:
+        except (AskarError, ValueError):
             return False
 
     async def update(self, category, data_key, data, tags=None):
@@ -89,5 +89,5 @@ class AskarStorage:
                     json.dumps(data),
                     tags,
                 )
-        except:
+        except (AskarError, ValueError):
             return False
