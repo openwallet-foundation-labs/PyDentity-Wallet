@@ -12,7 +12,7 @@ class AgentController:
     def _try_return(self, response):
         try:
             return response.json()
-        except:
+        except (ValueError, requests.exceptions.RequestException):
             current_app.logger.warning(response.status_code)
             current_app.logger.warning(response.text)
             return None
@@ -53,6 +53,45 @@ class AgentController:
             requests.post(
                 f"{self.admin_endpoint}/wallet/keys",
                 json={"alg": "ed25519"},
+                headers=self.tenant_headers,
+            )
+        )
+
+    def create_did(self):
+        current_app.logger.warning("Creating DID")
+        return self._try_return(
+            requests.post(
+                f"{self.admin_endpoint}/wallet/did/create",
+                json={"method": "key", "options": {"key_type": "ed25519"}},
+                headers=self.tenant_headers,
+            )
+        )
+
+    def store_credential(self, credential):
+        current_app.logger.warning("Storing Credential")
+        return self._try_return(
+            requests.post(
+                f"{self.admin_endpoint}/vc/credentials/store",
+                json={"verifiableCredential": credential},
+                headers=self.tenant_headers,
+            )
+        )
+
+    def fetch_credentials(self):
+        current_app.logger.warning("Fetching Credential")
+        return self._try_return(
+            requests.get(
+                f"{self.admin_endpoint}/vc/credentials",
+                headers=self.tenant_headers,
+            )
+        )
+
+    def sign_presentation(self, presentation, options):
+        current_app.logger.warning("Signing Presentation")
+        return self._try_return(
+            requests.post(
+                f"{self.admin_endpoint}/vc/presentations/prove",
+                json={"presentation": presentation, "options": options},
                 headers=self.tenant_headers,
             )
         )

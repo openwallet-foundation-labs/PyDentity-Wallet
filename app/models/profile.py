@@ -1,13 +1,9 @@
-from pydantic import BaseModel, Field
-from typing import Dict, Any
+from pydantic import Field
+
+from .base import CustomBaseModel
 
 
-class BaseModel(BaseModel):
-    def model_dump(self, **kwargs) -> Dict[str, Any]:
-        return super().model_dump(by_alias=True, exclude_none=True, **kwargs)
-
-
-class Profile(BaseModel):
+class Profile(CustomBaseModel):
     client_id: str = Field()
     wallet_id: str = Field()
     multikey: str = Field()
