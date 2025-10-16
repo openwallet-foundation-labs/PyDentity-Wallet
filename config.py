@@ -55,6 +55,9 @@ class Config(object):
     SESSION_COOKIE_HTTPONLY = "True"
 
     JSONIFY_PRETTYPRINT_REGULAR = True
+    
+    # Logging configuration
+    LOG_LEVEL = os.getenv("PYDENTITY_LOG_LEVEL", "INFO").upper()
 
     NGROK_AUTHTOKEN = os.getenv("NGROK_AUTHTOKEN", None)
     if NGROK_AUTHTOKEN:

@@ -11,14 +11,15 @@ class AgentController:
 
     def _try_return(self, response):
         try:
-            return response.json()
-        except (ValueError, requests.exceptions.RequestException):
+            return response.json()  
+        except Exception as e:
+            current_app.logger.warning(e)
             current_app.logger.warning(response.status_code)
             current_app.logger.warning(response.text)
             return None
 
     def create_subwallet(self, client_id, wallet_key):
-        current_app.logger.info(f"Creating new Subwallet: {client_id}")
+        current_app.logger.info(f"Creating new subwallet for client: {client_id}")
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/multitenancy/wallet",
@@ -28,14 +29,15 @@ class AgentController:
                     "wallet_key": wallet_key,
                     "wallet_name": client_id,
                     "wallet_type": "askar-anoncreds",
-                    "key_management_mode": "managed",
+                    # "key_management_mode": "managed",
+                    "wallet_webhook_urls": [f'{Config.APP_URL}/webhooks#{Config.AGENT_ADMIN_API_KEY}'],
                 },
                 headers=self.admin_headers,
             )
         )
 
     def request_token(self, wallet_id, wallet_key):
-        current_app.logger.warning("Requesting Access Token")
+        current_app.logger.info("Requesting Access Token")
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/multitenancy/wallet/{wallet_id}/token",
@@ -48,7 +50,7 @@ class AgentController:
         self.tenant_headers["Authorization"] = f"Bearer {token}"
 
     def create_key(self):
-        current_app.logger.warning("Creating keypair")
+        current_app.logger.info("Creating keypair")
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/wallet/keys",
@@ -58,7 +60,7 @@ class AgentController:
         )
 
     def create_did(self):
-        current_app.logger.warning("Creating DID")
+        current_app.logger.info("Creating DID")
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/wallet/did/create",
@@ -68,7 +70,7 @@ class AgentController:
         )
 
     def store_credential(self, credential):
-        current_app.logger.warning("Storing Credential")
+        current_app.logger.info("Storing Credential")
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/vc/credentials/store",
@@ -78,7 +80,7 @@ class AgentController:
         )
 
     def fetch_credentials(self):
-        current_app.logger.warning("Fetching Credential")
+        current_app.logger.info("Fetching Credential")
         return self._try_return(
             requests.get(
                 f"{self.admin_endpoint}/vc/credentials",
@@ -87,11 +89,21 @@ class AgentController:
         )
 
     def sign_presentation(self, presentation, options):
-        current_app.logger.warning("Signing Presentation")
+        current_app.logger.info("Signing Presentation")
         return self._try_return(
             requests.post(
                 f"{self.admin_endpoint}/vc/presentations/prove",
                 json={"presentation": presentation, "options": options},
+                headers=self.tenant_headers,
+            )
+        )
+
+    def receive_invitation(self, invitation):
+        current_app.logger.info("Receiving Invitation")
+        return self._try_return(
+            requests.post(
+                f"{self.admin_endpoint}/out-of-band/receive-invitation?auto_accept=true",
+                json=invitation,
                 headers=self.tenant_headers,
             )
         )

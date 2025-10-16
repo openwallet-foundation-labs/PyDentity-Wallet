@@ -30,6 +30,7 @@ async def provision_wallet(client_id):
     await askar.store("notifications", wallet_id, [], {})
 
     current_app.logger.warning(f"Configured Wallet: {wallet_id}")
+    current_app.logger.warning(f"Bearer {wallet['token']}")
 
     return wallet
 
