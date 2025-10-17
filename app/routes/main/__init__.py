@@ -41,6 +41,46 @@ def scan_qr_code():
     })
 
 
+@bp.route("/connection-status", methods=["GET"])
+def get_connection_status():
+    """Get the current connection state"""
+    from app.plugins import AgentController, AskarStorage
+    from asyncio import run as await_
+    
+    # Get the latest connection ID from session or most recent connection
+    connections = session.get('connections', [])
+    if not connections:
+        return jsonify({"state": "no_connection", "connected": False})
+    
+    # Get the most recent connection
+    latest_connection = connections[-1] if connections else None
+    if not latest_connection:
+        return jsonify({"state": "no_connection", "connected": False})
+    
+    connection_id = latest_connection.get('connection_id')
+    
+    agent = AgentController()
+    askar = AskarStorage()
+    
+    # Get wallet and set token
+    wallet = await_(askar.fetch("wallet", session.get("wallet_id")))
+    agent.set_token(wallet["token"])
+    
+    try:
+        connection_info = agent.get_connection_info(connection_id)
+        state = connection_info.get('state', 'unknown')
+        connected = state in ['active', 'completed', 'response']
+        
+        return jsonify({
+            "state": state,
+            "connected": connected,
+            "their_label": connection_info.get('their_label', 'Unknown')
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error getting connection status: {e}")
+        return jsonify({"state": "error", "connected": False, "error": str(e)})
+
+
 @bp.route("/credential-offers", methods=["GET"])
 def get_credential_offers():
     """Get pending credential offers for the user"""

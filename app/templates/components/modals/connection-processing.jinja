@@ -28,7 +28,7 @@ function showConnectionProcessing() {
     const modal = new bootstrap.Modal(document.getElementById('connection-processing-modal'));
     modal.show();
     
-    // Start checking connection state
+    // Start checking connection state from the agent
     let attempts = 0;
     const maxAttempts = 10; // 10 attempts * 500ms = 5 seconds
     
@@ -36,31 +36,36 @@ function showConnectionProcessing() {
         attempts++;
         
         try {
-            // Check if we have new connections or notifications
-            const response = await fetch(window.location.href);
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+            // Check connection state from the backend
+            const response = await fetch('{{ url_for("main.get_connection_status") }}');
+            const data = await response.json();
             
-            // Check if there are new connections/notifications in the response
-            const newConnectionsCount = doc.querySelectorAll('.card-sm .h2').length;
-            const currentConnectionsCount = document.querySelectorAll('.card-sm .h2').length;
+            console.log('Connection state:', data.state, 'Connected:', data.connected);
             
-            if (newConnectionsCount > currentConnectionsCount || attempts >= maxAttempts) {
-                // Connection established or timeout
+            if (data.connected) {
+                // Connection is active/completed
                 clearInterval(connectionCheckInterval);
                 
                 // Show success
                 document.getElementById('connection-spinner').style.display = 'none';
                 document.getElementById('connection-success').style.display = 'block';
                 document.getElementById('connection-status-text').textContent = 'Connection Established!';
-                document.getElementById('connection-status-detail').textContent = 'Redirecting...';
+                document.getElementById('connection-status-detail').textContent = `Connected to ${data.their_label || 'issuer'}`;
                 
                 // Redirect after a short delay
                 setTimeout(() => {
                     window.location.reload();
-                }, 1000);
+                }, 1500);
+                return;
             }
+            
+            // Update status message based on state
+            if (data.state === 'request') {
+                document.getElementById('connection-status-text').textContent = 'Connection Requested...';
+            } else if (data.state === 'response') {
+                document.getElementById('connection-status-text').textContent = 'Finalizing Connection...';
+            }
+            
         } catch (error) {
             console.error('Error checking connection state:', error);
         }
@@ -73,7 +78,7 @@ function showConnectionProcessing() {
             
             setTimeout(() => {
                 window.location.reload();
-            }, 1000);
+            }, 1500);
         }
     }, 500); // Check every 500ms
 }
