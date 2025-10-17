@@ -107,3 +107,59 @@ class AgentController:
                 headers=self.tenant_headers,
             )
         )
+
+    def get_credential_exchange_info(self, exchange_id):
+        current_app.logger.info("Getting Credential Exchange Info")
+        return self._try_return(
+            requests.get(
+                f"{self.admin_endpoint}/issue-credential-2.0/records/{exchange_id}",
+                headers=self.tenant_headers,
+            )
+        )
+
+    def send_credential_request(self, exchange_id):
+        current_app.logger.info("Sending Credential Request")
+        return self._try_return(
+            requests.post(
+                f"{self.admin_endpoint}/issue-credential-2.0/records/{exchange_id}/send-request",
+                headers=self.tenant_headers,
+            )
+        )
+
+    def send_credential_decline(self, exchange_id):
+        current_app.logger.info("Declining Credential Offer")
+        return self._try_return(
+            requests.post(
+                f"{self.admin_endpoint}/issue-credential-2.0/records/{exchange_id}/problem-report",
+                json={"description": "User declined the credential offer"},
+                headers=self.tenant_headers,
+            )
+        )
+
+    def send_presentation_response(self, exchange_id, presentation_request):
+        current_app.logger.info("Sending Presentation Response")
+        return self._try_return(
+            requests.post(
+                f"{self.admin_endpoint}/present-proof-2.0/records/{exchange_id}/send-presentation",
+                json=presentation_request,
+                headers=self.tenant_headers,
+            )
+        )
+
+    def get_connection_info(self, connection_id):
+        current_app.logger.info("Getting Connection Info")
+        return self._try_return(
+            requests.get(
+                f"{self.admin_endpoint}/connections/{connection_id}",
+                headers=self.tenant_headers,
+            )
+        )
+
+    def get_schema_info(self, schema_id):
+        current_app.logger.info("Getting Schema Info")
+        return self._try_return(
+            requests.get(
+                f"{self.admin_endpoint}/schemas/{schema_id}",
+                headers=self.tenant_headers,
+            )
+        )

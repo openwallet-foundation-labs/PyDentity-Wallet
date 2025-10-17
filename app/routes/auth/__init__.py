@@ -10,7 +10,7 @@ from flask import (
     current_app,
 )
 from config import Config
-from app.plugins import AgentController, AskarStorage, WebAuthnProvider
+from app.plugins import AgentController, AskarStorage, WebAuthnProvider, AskarStorageKeys
 from app.operations import provision_wallet
 from webauthn.helpers.exceptions import (
     InvalidRegistrationResponse,
@@ -101,8 +101,8 @@ def login():
 
     elif request.method == "POST":
         current_app.logger.warning(f"Verify login: {client_id}")
-        profile = await_(askar.fetch("profile", client_id))
-        wallet = await_(askar.fetch("wallet", profile["wallet_id"]))
+        profile = await_(askar.fetch(AskarStorageKeys.PROFILES, client_id))
+        wallet = await_(askar.fetch(AskarStorageKeys.WALLETS, profile.get("wallet_id")))
         if not profile or not wallet:
             abort(jsonify({"verified": False}), 400)
 
@@ -113,7 +113,7 @@ def login():
                 wallet.get("wallet_id"),
                 wallet.get("wallet_key"),
             ).get("token")
-            await_(askar.update("wallet", client_id, wallet))
+            await_(askar.update(AskarStorageKeys.WALLETS, client_id, wallet))
 
             session["client_id"], session["wallet_id"] = client_id, wallet["wallet_id"]
 

@@ -66,4 +66,5 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(webhooks_bp, url_prefix="/webhooks")
 
+
     return app

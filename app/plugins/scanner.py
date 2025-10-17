@@ -2,7 +2,7 @@ import requests
 from flask import current_app
 from app.plugins.vcapi import VcApiExchanger
 from app.plugins.acapy import AgentController
-from app.plugins.askar import AskarStorage
+from app.plugins.askar import AskarStorage, AskarStorageKeys
 import json
 import base64
 
@@ -18,24 +18,31 @@ class QRScanner:
     async def handle_payload(self, payload):
         current_app.logger.info("Parsing payload")
         uri = urlparse(payload)
+        current_app.logger.info(uri)
         
         if uri.scheme == "https":
             if uri.query.startswith("iuv=1"):
+                current_app.logger.info("Interaction URL Version 1")
                 # Handle Interaction URL Version 1
-                await self.iuv_handler(payload)
+                result = await self.iuv_handler(payload)
+                return {"type": "iuv", "result": result}
                 
             elif uri.query.startswith("oob"):
+                current_app.logger.info("Out of band invitation")
                 invitation = payload.split('?oob=')[-1]
                 decoded_invitation = json.loads(base64.urlsafe_b64decode(invitation+'===').decode())
                 await self.didcomm_handler(decoded_invitation)
+                return {"type": "oob_invitation", "label": decoded_invitation.get("label", "Unknown")}
                 
-            elif payload.split('?')[-1].startswith('_oobid='):
-                try:
-                    invitation = r.json()
-                    await self.didcomm_handler(invitation)
-                except:
-                    current_app.logger.info(r.text)
-        return
+            # elif payload.split('?')[-1].startswith('_oobid='):
+            #     try:
+            #         invitation = r.json()
+            #         await self.didcomm_handler(invitation)
+            #     except:
+            #         current_app.logger.info(r.text)
+        
+        current_app.logger.info("No matching URL scheme found")
+        return {"type": "unknown", "message": "No matching URL scheme found"}
     
     async def didcomm_handler(self, invitation):
         # BUG: marshmallow.exceptions.ValidationError: {'_schema': ['Model cannot have goal_code without goal']}
@@ -44,7 +51,7 @@ class QRScanner:
             
         current_app.logger.info(invitation)
         if invitation.get('@type') and invitation.get('@type').startswith('https://didcomm.org/out-of-band/1.'):
-            if (wallet := await askar.fetch('wallet', self.wallet_id)):
+            if (wallet := await askar.fetch(AskarStorageKeys.WALLETS, self.wallet_id)):
                 agent.set_token(wallet['token'])
                 agent.receive_invitation(invitation)
 

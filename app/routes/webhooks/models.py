@@ -4,6 +4,13 @@ from datetime import datetime, timezone
 
 from app.models.base import CustomBaseModel
 
+class Connection(CustomBaseModel):
+    created: str = Field()
+    updated: str = Field()
+    connection_id: str = Field()
+    label: str = Field()
+    did: str = Field()
+
 class Notification(CustomBaseModel):
     new: bool = Field(True)
     type: str = Field()

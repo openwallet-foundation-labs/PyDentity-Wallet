@@ -4,7 +4,7 @@ import json
 import base64
 from config import Config
 from app.models.webauthn import WebAuthnCredential
-from app.plugins import AskarStorage
+from app.plugins import AskarStorage, AskarStorageKeys
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 from webauthn.helpers import base64url_to_bytes
 from webauthn.helpers.structs import (
@@ -83,7 +83,7 @@ class WebAuthnProvider:
             "client_id": client_id,
         }
         await askar.store(
-            "webauthn/credential", credential["credential_id"], credential, tags
+            AskarStorageKeys.WEB_AUTHN_CREDENTIALS, credential["credential_id"], credential, tags
         )
 
     async def prepare_login_with_credential(self, client_id):
@@ -91,7 +91,7 @@ class WebAuthnProvider:
         Prepare the authentication options for a user trying to log in.
         """
         credential_id = await askar.fetch_name_by_tag(
-            "webauthn/credential", {"client_id": client_id}
+            AskarStorageKeys.WEB_AUTHN_CREDENTIALS, {"client_id": client_id}
         )
         if not credential_id:
             return None
@@ -140,9 +140,9 @@ class WebAuthnProvider:
         )
         expected_challenge = Config.AUTHENTICATION_CHALLENGES.get(client_id)
         credential_id = await askar.fetch_name_by_tag(
-            "webauthn/credential", {"client_id": client_id}
+            AskarStorageKeys.WEB_AUTHN_CREDENTIALS, {"client_id": client_id}
         )
-        credential = await askar.fetch("webauthn/credential", credential_id)
+        credential = await askar.fetch(AskarStorageKeys.WEB_AUTHN_CREDENTIALS, credential_id)
 
         # This will raise if the credential does not authenticate
         # It seems that safari doesn't track credential sign count correctly, so we just
@@ -167,4 +167,4 @@ class WebAuthnProvider:
         credential["current_sign_count"] += 1
         # session['webauthn_credential'] = stored_credential.model_dump()
         tags = {"client_id": client_id}
-        await askar.update("webauthn/credential", credential_id, credential, tags)
+        await askar.update(AskarStorageKeys.WEB_AUTHN_CREDENTIALS, credential_id, credential, tags)

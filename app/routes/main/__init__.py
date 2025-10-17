@@ -31,5 +31,89 @@ def index():
 def scan_qr_code():
     current_app.logger.warning("QR Scanner")
     qr_scanner = QRScanner(session["wallet_id"])
-    await_(qr_scanner.handle_payload(request.form["payload"]))
-    return jsonify({"status": "ok"})
+    result = await_(qr_scanner.handle_payload(request.form["payload"]))
+    
+    # Return success with message about what was processed
+    return jsonify({
+        "status": "success", 
+        "message": "QR code processed successfully",
+        "result": result
+    })
+
+
+@bp.route("/credential-offers", methods=["GET"])
+def get_credential_offers():
+    """Get pending credential offers for the user"""
+    from app.plugins import AskarStorage
+    askar = AskarStorage()
+    
+    offers = await_(askar.fetch("cred_ex", session.get("client_id")))
+    return jsonify({"offers": offers or []})
+
+
+@bp.route("/credential-offers/<exchange_id>/accept", methods=["POST"])
+def accept_credential_offer(exchange_id):
+    """Accept a credential offer"""
+    from app.plugins import AgentController, AskarStorage
+    from asyncio import run as await_
+    
+    agent = AgentController()
+    askar = AskarStorage()
+    
+    # Get wallet and set token
+    wallet = await_(askar.fetch("wallet", session.get("wallet_id")))
+    agent.set_token(wallet["token"])
+    
+    try:
+        # Send credential request
+        response = agent.send_credential_request(exchange_id)
+        return jsonify({"status": "success", "message": "Credential request sent"})
+    except Exception as e:
+        current_app.logger.error(f"Error accepting credential offer: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+
+@bp.route("/credential-offers/<exchange_id>/decline", methods=["POST"])
+def decline_credential_offer(exchange_id):
+    """Decline a credential offer"""
+    from app.plugins import AgentController, AskarStorage
+    from asyncio import run as await_
+    
+    agent = AgentController()
+    askar = AskarStorage()
+    
+    # Get wallet and set token
+    wallet = await_(askar.fetch("wallet", session.get("wallet_id")))
+    agent.set_token(wallet["token"])
+    
+    try:
+        # Send decline message
+        response = agent.send_credential_decline(exchange_id)
+        return jsonify({"status": "success", "message": "Credential offer declined"})
+    except Exception as e:
+        current_app.logger.error(f"Error declining credential offer: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+
+@bp.route("/presentation-requests/<exchange_id>/respond", methods=["POST"])
+def respond_to_presentation_request(exchange_id):
+    """Respond to a presentation request"""
+    from app.plugins import AgentController, AskarStorage
+    from asyncio import run as await_
+    
+    agent = AgentController()
+    askar = AskarStorage()
+    
+    # Get wallet and set token
+    wallet = await_(askar.fetch("wallet", session.get("wallet_id")))
+    agent.set_token(wallet["token"])
+    
+    try:
+        # Get presentation request details
+        pres_request = request.json
+        # Send presentation response
+        response = agent.send_presentation_response(exchange_id, pres_request)
+        return jsonify({"status": "success", "message": "Presentation response sent"})
+    except Exception as e:
+        current_app.logger.error(f"Error responding to presentation request: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 400

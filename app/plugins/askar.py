@@ -7,6 +7,20 @@ from config import Config
 logger = logging.getLogger(__name__)
 
 
+class AskarStorageKeys:
+    EXCHANGES = "exchanges"
+    CREDENTIALS = "credentials"
+    CONNECTIONS = "connections"
+    NOTIFICATIONS = "notifications"
+    MESSAGES = "messages"
+    PROFILES = "profiles"
+    WALLETS = "wallets"
+    TOKENS = "tokens"
+    SECRETS = "secrets"
+    SETTINGS = "settings"
+    WEB_AUTHN_CREDENTIALS = "webauthn/credentials"
+    VCAPI_EXCHANGES = "vcapi/exchanges"
+
 class AskarStorage:
     def __init__(self):
         self.db = Config.ASKAR_DB

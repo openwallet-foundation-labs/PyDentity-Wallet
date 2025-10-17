@@ -1,60 +1,191 @@
 {% extends('layouts/base.jinja') %}
 {% block page %}
-{# {% include('components/modals/credential.jinja')%} #}
+{% include('components/modals/credential.jinja')%}
+{% include('components/modals/notification.jinja')%}
+
 <div class="page-body">
-    <div class="container">
-        <div class="row row-deck row-cards">
-            {% for credential in session.get('credentials', []) %}
-            <div class="col-md-12">
-                <div class="card">
+    <div class="container-fluid">
+        <!-- Notifications Section -->
+        {% if session.get('notifications', []) %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card card-sm">
                     <div class="card-body">
-                        <div class="row g-2 align-items-center">
+                        <div class="row align-items-center">
                             <div class="col-auto">
-                                <span class="avatar avatar-lg" data-bs-toggle="modal"
-                                    data-bs-target="#modal-credential-{{ loop.index }}"
-                                    {% if credential.get('issuer') is mapping %}
-                                    style="background-image: url({{ credential.get('issuer').get('image', None) }})"></span>
-                                    {% else %}
-                                    style="background-image: url()"></span>
-                                    {% endif %}
+                                <span class="bg-blue text-white avatar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                </span>
                             </div>
                             <div class="col">
-                                <h5 class="m-0">
-                                    <a href="#">{{ credential.get('name', 'Verifiable Credential') }}</a>
-                                </h5>
-                                <div class="text-secondary">
-                                    {% if credential.get('issuer') is mapping %}
-                                    {{ credential.get('issuer', {}).get('name', 'Unlabelled Issuer') }}
-                                    {% else %}Unlabelled Issuer{% endif %}
+                                <div class="font-weight-medium">
+                                    {{ session.get('notifications', [])|length }} New Notification{{ 's' if session.get('notifications', [])|length != 1 else '' }}
                                 </div>
-                                <div class="small mt-1">
-                                    {% if credential.get('validFrom') %} {{ credential['validFrom'].split('T')[0] }}
-                                    {% elif credential.get('issuanceDate') %} {{ credential['issuanceDate'].split('T')[0] }}
-                                    {% else %} No Issuance {% endif %}
-                                    -
-                                    {% if credential.get('validUntil') %} {{ credential['validUntil'].split('T')[0] }}
-                                    {% elif credential.get('expirationDate') %} {{ credential['expirationDate'].split('T')[0] }}
-                                    {% else %} No Expiration {% endif %}
+                                <div class="text-secondary">
+                                    Tap to view pending offers and requests
                                 </div>
                             </div>
                             <div class="col-auto">
-                                <a href="#" onclick='downloadVc({{ credential | tojson }})' class="btn-action">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-download">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
-                                        <path d="M7 11l5 5l5 -5" />
-                                        <path d="M12 4l0 12" />
-                                    </svg>
+                                <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#notification-modal">
+                                    View
                                 </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+        {% endif %}
+
+        <!-- Stats Cards -->
+        <div class="row mb-3">
+            <div class="col-4">
+                <div class="card card-sm">
+                    <div class="card-body text-center">
+                        <div class="h2 m-0">{{ session.get('credentials', [])|length }}</div>
+                        <div class="text-secondary">Credentials</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card card-sm">
+                    <div class="card-body text-center">
+                        <div class="h2 m-0">{{ session.get('connections', [])|length }}</div>
+                        <div class="text-secondary">Connections</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card card-sm">
+                    <div class="card-body text-center">
+                        <div class="h2 m-0">{{ session.get('notifications', [])|length }}</div>
+                        <div class="text-secondary">Pending</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credentials Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="card-title">My Credentials</h3>
+                    {% if session.get('credentials', []) %}
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                <path d="M3 6h18"></path>
+                                <path d="M3 12h18"></path>
+                                <path d="M3 18h18"></path>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="#" onclick="downloadAllCredentials()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
+                                    <path d="M7 11l5 5l5 -5"></path>
+                                    <path d="M12 4l0 12"></path>
+                                </svg>
+                                Download All
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if session.get('credentials', []) %}
+                    {% for credential in session.get('credentials', []) %}
+                    <div class="card mb-3" style="border-left: 4px solid #206bc4;">
+                        <div class="card-body p-3">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-auto">
+                                    <span class="avatar avatar-md" style="background-image: url({{ credential.get('issuer', {}).get('image', '') if credential.get('issuer') is mapping else '' }})">
+                                        {% set has_issuer_image = credential.get('issuer', {}).get('image') if credential.get('issuer') is mapping else '' %}
+                                        {% if not has_issuer_image %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                        </svg>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <h4 class="m-0 text-truncate">{{ credential.get('name', 'Verifiable Credential') }}</h4>
+                                    <div class="text-secondary text-truncate">
+                                        {% if credential.get('issuer') is mapping %}
+                                        {{ credential.get('issuer', {}).get('name', 'Unknown Issuer') }}
+                                        {% else %}Unknown Issuer{% endif %}
+                                    </div>
+                                    <div class="small text-muted">
+                                        {% if credential.get('validFrom') %} 
+                                        Issued: {{ credential['validFrom'].split('T')[0] }}
+                                        {% elif credential.get('issuanceDate') %} 
+                                        Issued: {{ credential['issuanceDate'].split('T')[0] }}
+                                        {% endif %}
+                                        {% if credential.get('validUntil') or credential.get('expirationDate') %}
+                                        • Expires: {{ credential['validUntil'].split('T')[0] if credential.get('validUntil') else credential['expirationDate'].split('T')[0] }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="btn-group-vertical">
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modal-credential-{{ loop.index }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick='downloadVc({{ credential | tojson }})'>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
+                                                <path d="M7 11l5 5l5 -5"></path>
+                                                <path d="M12 4l0 12"></path>
+                                            </svg>
+                                        </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% endfor %}
+                {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <div class="empty">
+                            <div class="empty-img">
+                                <img src="https://preview.tabler.io/static/illustrations/undraw_quitting_time_dm8t.svg" height="128" alt="">
+                            </div>
+                            <p class="empty-title">No credentials yet</p>
+                            <p class="empty-subtitle text-secondary">
+                                Scan a QR code or accept a credential offer to get started.
+                            </p>
+                            <div class="empty-action">
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scanner-modal">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                                        <path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+                                        <path d="M7 17l0 .01"></path>
+                                        <path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+                                        <path d="M7 7l0 .01"></path>
+                                        <path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+                                        <path d="M17 7l0 .01"></path>
+                                        <path d="M14 14l3 0"></path>
+                                        <path d="M20 14l0 .01"></path>
+                                        <path d="M14 14l0 3"></path>
+                                        <path d="M14 20l3 0"></path>
+                                        <path d="M17 17l3 0"></path>
+                                        <path d="M20 17l0 3"></path>
+                                    </svg>
+                                    Scan QR Code
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -67,5 +198,24 @@
         a.click();
         return true
     }
+
+    function downloadAllCredentials() {
+        const credentials = {{ session.get('credentials', []) | tojson }};
+        const dataStr = JSON.stringify(credentials, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'all-credentials.json';
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Auto-refresh notifications every 30 seconds
+    setInterval(function() {
+        // Simple page reload to refresh session data
+        // In a real app, you'd use AJAX to fetch new notifications
+        location.reload();
+    }, 30000);
 </script>
 {% endblock %}

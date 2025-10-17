@@ -2,7 +2,7 @@ import requests
 import uuid
 from datetime import datetime
 from app.plugins.acapy import AgentController
-from app.plugins.askar import AskarStorage
+from app.plugins.askar import AskarStorage, AskarStorageKeys
 from app.models.notification import Notification
 
 agent = AgentController()
@@ -19,7 +19,7 @@ class VcApiExchanger:
         return r.json()
 
     async def store_credential(self, vp):
-        wallet = await askar.fetch("wallet", self.wallet_id)
+        wallet = await askar.fetch(AskarStorageKeys.WALLETS, self.wallet_id)
         for vc in vp.get("verifiableCredential"):
             agent.set_token(
                 agent.request_token(self.wallet_id, wallet.get("wallet_key")).get(
