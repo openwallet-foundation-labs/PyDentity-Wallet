@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 {% include('components/head.jinja')%}
 
 <body>
@@ -19,6 +19,45 @@
     {% include('components/modals/scanner.jinja')%}
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.1.1/dist/js/tabler.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    
+    <!-- Theme Switcher -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            const html = document.documentElement;
+            
+            // Get saved theme or default to dark
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            html.setAttribute('data-bs-theme', savedTheme);
+            updateThemeUI(savedTheme);
+            
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const currentTheme = html.getAttribute('data-bs-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    
+                    html.setAttribute('data-bs-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    updateThemeUI(newTheme);
+                });
+            }
+            
+            function updateThemeUI(theme) {
+                if (theme === 'dark') {
+                    // Currently in dark mode, show option to switch to light
+                    themeIcon.innerHTML = '<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />';
+                    themeText.textContent = 'Light Theme';
+                } else {
+                    // Currently in light mode, show option to switch to dark  
+                    themeIcon.innerHTML = '<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />';
+                    themeText.textContent = 'Dark Theme';
+                }
+            }
+        });
+    </script>
 
 </body>
 
