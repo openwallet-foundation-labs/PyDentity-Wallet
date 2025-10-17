@@ -59,14 +59,13 @@
                                 </div>
                                 <div class="col-auto">
                                     {% if notification.get('type') == 'cred_offer' %}
-                                    <div class="btn-group">
-                                        <button class="btn btn-sm btn-success" onclick="acceptCredentialOffer('{{ notification.get('details', {}).get('exchange_id', '') }}')">
-                                            Accept
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="declineCredentialOffer('{{ notification.get('details', {}).get('exchange_id', '') }}')">
-                                            Decline
-                                        </button>
-                                    </div>
+                                    <a href="{{ url_for('main.credential_offer', exchange_id=notification.get('details', {}).get('exchange_id', '')) }}" class="btn btn-sm btn-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                        View Details
+                                    </a>
                                     {% elif notification.get('type') == 'pres_request' %}
                                     <button class="btn btn-sm btn-primary" onclick="respondToPresentation('{{ notification.get('details', {}).get('exchange_id', '') }}')">
                                         Respond
