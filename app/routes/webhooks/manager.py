@@ -2,7 +2,6 @@ from flask import current_app
 
 from .models import Message, CredentialOffer, PresentationRequest, Notification, Connection
 from app.plugins import AskarStorage, AgentController, AskarStorageKeys
-
 askar = AskarStorage()
 agent = AgentController()
 
@@ -62,31 +61,42 @@ class WebhookManager:
             current_app.logger.warning(payload.get('state'))
         return {}, 200
 
-    async def topic_connections(self, payload):
-        state = payload.get('state')
-        current_app.logger.info(f'Connection state: {state}')
+    async def topic_connections(self, connection):
+        state = connection.get('state')
+        connection_id = connection.get('connection_id')
+        current_app.logger.info(f'Connection {connection_id}: {state}')
+        
+        connection = Connection(
+            active=connection.get('state') == 'active',
+            state=connection.get('state'),
+            created=connection.get('created_at'),
+            updated=connection.get('updated_at'),
+            connection_id=connection.get('connection_id'),
+            label=connection.get('their_label'),
+            did=connection.get('their_did')
+        ).model_dump()
+        tags = {
+            'wallet_id': self.wallet_id,
+            'connection_id': connection.get('connection_id')
+        }
         if state == 'invitation':
-            pass
+            if not await askar.fetch_entry_by_tag(AskarStorageKeys.CONNECTIONS, tags):
+                await askar.append(AskarStorageKeys.CONNECTIONS, self.wallet_id, connection)
+                await askar.store(AskarStorageKeys.CONNECTIONS, tags['connection_id'], connection, tags)
+                
         elif state == 'request':
             pass
         elif state == 'response':
             pass
         elif state == 'active':
-            their_label = payload.get('their_label')
-            notification = Notification(
-                type='connection',
-                title=f'New connection with {their_label}',
-                details=payload
-            ).model_dump()
-            await askar.append(AskarStorageKeys.NOTIFICATIONS, self.wallet_id, notification)
-            connection = Connection(
-                created=payload.get('created_at'),
-                updated=payload.get('updated_at'),
-                connection_id=payload.get('connection_id'),
-                label=payload.get('their_label'),
-                did=payload.get('their_did')
-            ).model_dump()
-            await askar.append(AskarStorageKeys.CONNECTIONS, self.wallet_id, connection)
+            # their_label = connection.get('their_label')
+            # notification = Notification(
+            #     type='connection',
+            #     title=f'New connection with {their_label}',
+            #     details=connection
+            # ).model_dump()
+            # await askar.append(AskarStorageKeys.NOTIFICATIONS, self.wallet_id, notification)
+            await askar.update(AskarStorageKeys.CONNECTIONS, tags['connection_id'], connection, tags)
         else:
             pass
         return {}, 200
@@ -122,42 +132,70 @@ class WebhookManager:
         # Add revocation logic here as needed
         return {}, 200
 
-    async def topic_issue_credential_v2_0(self, payload):
+    async def topic_issue_credential_v2_0(self, exchange):
         """Handle issue credential v2.0 webhooks"""
-        current_app.logger.warning(payload.get('state'))
-        current_app.logger.warning(payload)
-        if payload.get('state') == 'offer-received':
-            wallet = await askar.fetch('wallet', self.wallet_id)
+        current_app.logger.warning(f"=== CREDENTIAL OFFER WEBHOOK ===")
+        current_app.logger.warning(f"State: {exchange.get('state')}")
+        current_app.logger.warning(f"Cred Ex ID: {exchange.get('cred_ex_id')}")
+        current_app.logger.warning(f"Connection ID: {exchange.get('connection_id')}")
+        # current_app.logger.warning(f"Full payload: {payload}")
+                
+        cred_offer = CredentialOffer(
+            state=exchange.get('state'),
+            completed=exchange.get('state') == 'done',
+            timestamp=exchange.get('created_at'),
+            exchange_id=exchange.get('cred_ex_id'),
+            connection_id=exchange.get('connection_id'),
+            # comment=exchange.get('cred_offer').get('comment'),
+            # preview=preview,
+        ).model_dump()
+        
+        if exchange.get('state') == 'offer-received':
+            current_app.logger.info(f"Processing credential offer for wallet: {self.wallet_id}")
+            
+            wallet = await askar.fetch(AskarStorageKeys.WALLETS, self.wallet_id)
+            if not wallet:
+                current_app.logger.error(f"Wallet not found: {self.wallet_id}")
+                return {}, 404
+                
             agent.set_token(wallet['token'])
             
             cred_ex = agent.get_credential_exchange_info(
-                payload.get('cred_ex_id')
-            ).get('cred_ex_record') 
+                exchange.get('cred_ex_id')
+            ).get('cred_ex_record')
+            
+            current_app.logger.info(f"Credential exchange record: {cred_ex}")
+            cred_offer['comment'] = cred_ex.get('cred_offer').get('comment')
+            
             preview = {}
             for attribute in cred_ex.get('cred_offer').get('credential_preview').get('attributes'):
                 preview[attribute.get('name')] = attribute.get('value')
-                
-            cred_offer = CredentialOffer(
-                timestamp=cred_ex.get('created_at'),
-                exchange_id=cred_ex.get('cred_ex_id'),
-                connection_id=cred_ex.get('connection_id'),
-                comment=cred_ex.get('cred_offer').get('comment'),
-                preview=preview,
-            ).model_dump()
+            
+            current_app.logger.info(f"Credential preview attributes: {preview}")
+            cred_offer['preview'] = preview
+            
+            current_app.logger.info(f"Storing credential offer to CRED_OFFERS: {cred_offer}")
             await askar.append(AskarStorageKeys.CRED_OFFERS, self.wallet_id, cred_offer)
             
-            schema_name = agent.get_schema_info(
-                payload.get('by_format').get('cred_offer').get('anoncreds').get('schema_id')
-            ).get('schema').get('name')
+            # schema_name = agent.get_schema_info(
+            #     exchange.get('by_format').get('cred_offer').get('anoncreds').get('schema_id')
+            # ).get('schema').get('name')
+            schema_name = 'Schema Name'
             issuer_name = agent.get_connection_info(
-                payload.get('connection_id')
+                exchange.get('connection_id')
             ).get('their_label')
+            
+            current_app.logger.info(f"Schema name: {schema_name}, Issuer: {issuer_name}")
+            
             notification = Notification(
                 type='cred_offer',
                 title=f'{issuer_name} is offering {schema_name}',
                 details=cred_offer
             ).model_dump()
+            
+            current_app.logger.info(f"Creating notification: {notification}")
             await askar.append(AskarStorageKeys.NOTIFICATIONS, self.wallet_id, notification)
+            current_app.logger.info(f"✅ Credential offer notification created successfully!")
             
             
             # agent = AgentController()
@@ -186,11 +224,11 @@ class WebhookManager:
             # }
             # await askar.store('cred_meta', cred_def_id, cred_meta)
             
-        elif payload.get('state') == 'request-sent':
+        elif exchange.get('state') == 'request-sent':
             pass
-        elif payload.get('state') == 'credential-received':
+        elif exchange.get('state') == 'credential-received':
             pass
-        elif payload.get('state') == 'done':
+        elif exchange.get('state') == 'done':
             pass
         #     attributes = payload.get('cred_offer').get('credential_preview').get('attributes')
         #     cred_input = {
