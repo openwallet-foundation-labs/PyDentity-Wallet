@@ -9,7 +9,7 @@ from flask import (
     url_for,
 )
 from app.plugins import QRScanner
-from app.operations import sync_session
+from app.operations import sync_session, sign_in_agent
 from asyncio import run as await_
 
 bp = Blueprint("main", __name__)
@@ -30,8 +30,9 @@ def index():
 @bp.route("/scanner", methods=["POST"])
 def scan_qr_code():
     current_app.logger.warning("QR Scanner")
-    qr_scanner = QRScanner(session["wallet_id"])
-    result = await_(qr_scanner.handle_payload(request.form["payload"]))
+    result = await_(
+        QRScanner(session["wallet_id"]).handle_payload(request.form["payload"])
+    )
     
     # Return success with message about what was processed
     return jsonify({
@@ -47,26 +48,23 @@ def get_connection_status():
     from app.plugins import AgentController, AskarStorage
     from asyncio import run as await_
     
-    # Get the latest connection ID from session or most recent connection
-    connections = session.get('connections', [])
-    if not connections:
-        return jsonify({"state": "no_connection", "connected": False})
-    
-    # Get the most recent connection
-    latest_connection = connections[-1] if connections else None
-    if not latest_connection:
-        return jsonify({"state": "no_connection", "connected": False})
-    
-    connection_id = latest_connection.get('connection_id')
-    
-    agent = AgentController()
-    askar = AskarStorage()
-    
-    # Get wallet and set token
-    wallet = await_(askar.fetch("wallet", session.get("wallet_id")))
-    agent.set_token(wallet["token"])
-    
     try:
+        # Get the latest connection ID from session or most recent connection
+        if not (connections := session.get('connections', [])):
+            return jsonify({"state": "no_connection", "connected": False})
+        
+        # Get the most recent connection
+        if not (connection_id := (connections[-1] if connections else {}).get('connection_id')):
+            return jsonify({"state": "no_connection", "connected": False})
+        
+        # Get wallet_id from session
+        if not (wallet_id := session.get("wallet_id")):
+            return jsonify({"state": "no_wallet", "connected": False})
+        
+        if not (agent := await_(sign_in_agent(wallet_id))):
+            return jsonify({"state": "wallet_not_found", "connected": False})
+        
+        
         connection_info = agent.get_connection_info(connection_id)
         state = connection_info.get('state', 'unknown')
         connected = state in ['active', 'completed', 'response']
