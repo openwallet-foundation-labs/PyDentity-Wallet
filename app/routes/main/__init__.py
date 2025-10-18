@@ -48,34 +48,59 @@ def get_connection_status():
     from app.plugins import AgentController, AskarStorage
     from asyncio import run as await_
     
+    current_app.logger.info("=== Connection Status Check ===")
+    
     try:
+        # Get wallet_id from session
+        wallet_id = session.get("wallet_id")
+        current_app.logger.info(f"Wallet ID from session: {wallet_id}")
+        
+        if not wallet_id:
+            current_app.logger.warning("No wallet_id in session")
+            return jsonify({"state": "no_wallet", "connected": False})
+        
         # Get the latest connection ID from session or most recent connection
-        if not (connections := session.get('connections', [])):
+        connections = session.get('connections', [])
+        current_app.logger.info(f"Found {len(connections)} connections in session")
+        
+        if not connections:
+            current_app.logger.warning("No connections found in session")
             return jsonify({"state": "no_connection", "connected": False})
         
         # Get the most recent connection
-        if not (connection_id := (connections[-1] if connections else {}).get('connection_id')):
+        latest_connection = connections[-1] if connections else {}
+        connection_id = latest_connection.get('connection_id')
+        current_app.logger.info(f"Latest connection ID: {connection_id}")
+        
+        if not connection_id:
+            current_app.logger.warning("No connection_id in latest connection")
             return jsonify({"state": "no_connection", "connected": False})
         
-        # Get wallet_id from session
-        if not (wallet_id := session.get("wallet_id")):
-            return jsonify({"state": "no_wallet", "connected": False})
+        # Sign in to agent
+        current_app.logger.info(f"Signing in to agent with wallet_id: {wallet_id}")
+        agent = await_(sign_in_agent(wallet_id))
         
-        if not (agent := await_(sign_in_agent(wallet_id))):
+        if not agent:
+            current_app.logger.error("Failed to sign in to agent")
             return jsonify({"state": "wallet_not_found", "connected": False})
         
-        
+        # Get connection info from agent
+        current_app.logger.info(f"Fetching connection info for: {connection_id}")
         connection_info = agent.get_connection_info(connection_id)
+        
         state = connection_info.get('state', 'unknown')
+        their_label = connection_info.get('their_label', 'Unknown')
         connected = state in ['active', 'completed', 'response']
+        
+        current_app.logger.info(f"Connection state: {state}, Connected: {connected}, Their label: {their_label}")
         
         return jsonify({
             "state": state,
             "connected": connected,
-            "their_label": connection_info.get('their_label', 'Unknown')
+            "their_label": their_label
         })
     except Exception as e:
-        current_app.logger.error(f"Error getting connection status: {e}")
+        current_app.logger.error(f"Error getting connection status: {e}", exc_info=True)
         return jsonify({"state": "error", "connected": False, "error": str(e)})
 
 
