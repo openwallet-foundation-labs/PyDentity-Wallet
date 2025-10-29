@@ -42,18 +42,23 @@ def create_app(config_class=Config):
     @app.route("/manifest.json")
     @app.route("/manifest.webmanifest")
     def manifest():
+        # Use ngrok URL if available, otherwise use configured APP_URL
+        app_url = app.config.get('NGROK_URL') or Config.APP_URL
         manifest_content = json.loads(
             render_template(
-                "manifest.jinja", app_url=Config.APP_URL, app_name=Config.APP_NAME
+                "manifest.jinja", app_url=app_url, app_name=Config.APP_NAME
             )
         )
         return jsonify(manifest_content)
 
     @app.route("/install")
     def install():
+        # Use ngrok URL if available, otherwise use configured APP_URL
+        app_url = app.config.get('NGROK_URL') or Config.APP_URL
         return render_template(
             "pages/install.jinja",
-            app_url=Config.APP_URL,
+            app_url=app_url,
+            demo_url=Config.DEMO_ANONCREDS,
             app_name=Config.APP_NAME,
             project_url=Config.PROJECT_URL,
         )

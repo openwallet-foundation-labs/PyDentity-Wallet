@@ -27,6 +27,9 @@ class Config(object):
     )
 
     PROJECT_URL = "https://github.com/openwallet-foundation-labs/PyDentity-Wallet"
+    
+    # Demo AnonCreds URL for trying out the wallet
+    DEMO_ANONCREDS = os.getenv("DEMO_ANONCREDS", "https://anoncreds.vc")
 
     SECRET_KEY = os.getenv("PYDENTITY_WALLET_SECRET_KEY", "unsecured")
 

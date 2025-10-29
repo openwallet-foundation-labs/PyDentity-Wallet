@@ -24,6 +24,9 @@ if __name__ == "__main__":
                     authtoken=os.getenv("NGROK_AUTHTOKEN"),
                     domain=os.getenv("PYDENTITY_WALLET_DOMAIN")
                 )
+                # Store ngrok URL in app config
+                app.config['NGROK_URL'] = listener.url()
+                
                 qr = QRCode(box_size=10, border=4)
                 qr.add_data(listener.url())
                 qr.print_ascii()

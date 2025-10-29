@@ -12,9 +12,10 @@ from flask import (
 )
 from app.plugins import QRScanner, AskarStorage, AskarStorageKeys
 from app.operations import sync_session, sign_in_agent
-from app.utils import notification_broadcaster
+from app.utils import notification_broadcaster, is_mobile
 from asyncio import run as await_
 import json
+import os
 
 
 bp = Blueprint("main", __name__)
@@ -22,12 +23,31 @@ bp = Blueprint("main", __name__)
 
 @bp.before_request
 def before_request_callback():
+    # Allow desktop users to see install page without authentication
+    if request.endpoint == 'main.index' and not is_mobile():
+        return None
+    
     if not session.get("client_id"):
         return redirect(url_for("auth.index"))
 
 
 @bp.route("/", methods=["GET"])
 def index():
+    # Check if user is on desktop - show install page
+    if not is_mobile():
+        # Use ngrok URL if available, otherwise use request host URL
+        from config import Config
+        app_url = current_app.config.get('NGROK_URL') or request.host_url.rstrip('/')
+        demo_url = Config.DEMO_ANONCREDS
+        project_url = "https://github.com/OpenWallet-Foundation-Labs/pydentity-wallet"
+        return render_template(
+            "pages/install.jinja",
+            app_url=app_url,
+            demo_url=demo_url,
+            project_url=project_url
+        )
+    
+    # Mobile users - proceed with wallet interface
     try:
         await_(sync_session(session.get("client_id")))
     except ValueError:

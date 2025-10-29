@@ -6,6 +6,8 @@ from typing import Dict, Any
 import queue
 import threading
 
+from .device import is_mobile, get_device_type
+
 
 # Global event broadcaster for real-time notifications
 class NotificationBroadcaster:
@@ -282,4 +284,16 @@ def beautify_anoncreds(
     
     # Return both credential and tags
     return credential.model_dump(), tags
+
+
+__all__ = [
+    'is_mobile',
+    'get_device_type',
+    'notification_broadcaster',
+    'create_notification',
+    'delete_notification',
+    'get_notifications',
+    'beautify_anoncreds'
+]
+
 
