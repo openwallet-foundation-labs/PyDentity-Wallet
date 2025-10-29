@@ -1,0 +1,243 @@
+<!-- Connection Details Modal -->
+<div class="modal modal-blur fade" id="connection-details-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-lg-down" role="document">
+        <div class="modal-content">
+            <!-- Connection Info Header -->
+            <div class="modal-header">
+                <span class="avatar avatar-md bg-blue-lt me-3" id="connection-avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                </span>
+                <div class="flex-fill" style="min-width: 0;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-fill" style="min-width: 0;">
+                            <h4 id="connection-label" class="mb-0 text-truncate">Unknown</h4>
+                            <div class="mt-1">
+                                <span class="badge bg-success-lt" id="connection-state">active</span>
+                                <span class="badge badge-outline ms-1" id="connection-did-method">did:unknown</span>
+                            </div>
+                        </div>
+                        <div class="text-end ms-2" style="flex-shrink: 0;">
+                            <div class="small text-muted">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Connected
+                            </div>
+                            <div class="small" id="connection-created">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Messages Area (Card Body) -->
+            <div class="modal-body" id="messages-container" style="overflow-y: auto; overflow-x: hidden; max-height: calc(100vh - 240px);">
+                <div id="messages-list">
+                    <!-- Messages will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Message Input (Card Footer) -->
+            <div class="modal-footer">
+                <form id="message-form" class="flex-fill">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="message-input" placeholder="Type a message..." autocomplete="off">
+                        <button type="submit" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 2L11 13"></path>
+                                <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary ms-2" data-bs-dismiss="modal">
+                            Close
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentConnectionId = null;
+
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+        return '';
+    }
+}
+
+function renderMessages(messages) {
+    const container = document.getElementById('messages-list');
+    container.innerHTML = '';
+    
+    if (!messages || messages.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted py-5"><p>No messages yet</p><p class="small">Start a conversation by sending a message below</p></div>';
+        return;
+    }
+    
+    messages.forEach(msg => {
+        const isInbound = msg.inbound === true || msg.inbound === 'true';
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `mb-3 px-3 ${isInbound ? '' : 'text-end'}`;
+        
+        messageDiv.innerHTML = `
+            <div class="d-inline-block ${isInbound ? 'text-start' : 'text-end'}" style="max-width: 70%;">
+                <div class="card ${isInbound ? 'bg-light' : 'bg-primary text-white'}">
+                    <div class="card-body p-2">
+                        <div class="text-break">${escapeHtml(msg.content || '')}</div>
+                        <div class="small ${isInbound ? 'text-muted' : 'text-white-50'} mt-1">${formatTime(msg.timestamp)}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(messageDiv);
+    });
+    
+    // Add top padding to first message
+    const firstMessage = container.firstChild;
+    if (firstMessage) {
+        firstMessage.classList.add('mt-3');
+    }
+    
+    // Scroll to bottom
+    const messagesContainer = document.getElementById('messages-container');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+window.loadConnectionDetails = function(connectionId) {
+    currentConnectionId = connectionId;
+    
+    fetch(`/connections/${connectionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading connection:', data.error);
+                return;
+            }
+            
+            const conn = data.connection;
+            console.log('Connection data:', conn);
+            
+            // Extract DID method (e.g., "did:web", "did:sov", "did:key")
+            let didMethod = 'Unknown';
+            const fullDid = conn.did || 'did:unknown';
+            if (fullDid && fullDid.startsWith('did:')) {
+                const parts = fullDid.split(':');
+                if (parts.length >= 2) {
+                    didMethod = `did:${parts[1]}`;
+                }
+            }
+            
+            // Update connection info
+            document.getElementById('connection-label').textContent = conn.label || 'Unknown';
+            document.getElementById('connection-state').textContent = conn.state || 'unknown';
+            document.getElementById('connection-state').className = `badge bg-${conn.state === 'active' ? 'success' : 'secondary'}-lt`;
+            document.getElementById('connection-did-method').textContent = didMethod;
+            
+            // Update created date
+            const createdDate = conn.created || conn.created_at || conn.updated || conn.updated_at;
+            if (createdDate) {
+                try {
+                    const date = new Date(createdDate);
+                    if (!isNaN(date.getTime())) {
+                        document.getElementById('connection-created').textContent = date.toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        });
+                    } else {
+                        document.getElementById('connection-created').textContent = createdDate;
+                    }
+                } catch (e) {
+                    console.error('Error parsing date:', e);
+                    document.getElementById('connection-created').textContent = createdDate;
+                }
+            } else {
+                document.getElementById('connection-created').textContent = 'Recently';
+            }
+            
+            // Render messages
+            renderMessages(data.messages || []);
+        })
+        .catch(error => {
+            console.error('Error fetching connection details:', error);
+        });
+}
+
+// Message form submission
+document.getElementById('message-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+    
+    if (!message || !currentConnectionId) return;
+    
+    // TODO: Send message via ACA-Py API
+    // For now, just clear the input
+    input.value = '';
+    
+    // Note: Actual message sending would require an ACA-Py endpoint
+    // This is a placeholder for future implementation
+    console.log('Send message:', message, 'to connection:', currentConnectionId);
+});
+
+// Initialize modal event
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('connection-details-modal');
+    if (modal) {
+        modal.addEventListener('hidden.bs.modal', function() {
+            currentConnectionId = null;
+            document.getElementById('messages-list').innerHTML = '';
+        });
+    }
+});
+</script>
+
+<style>
+#messages-container {
+    background-color: #f8f9fa;
+}
+
+#messages-list .card {
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    border: none;
+}
+
+#messages-list .card.bg-light {
+    background-color: #ffffff !important;
+    color: #495057;
+}
+
+#messages-list .text-end .card {
+    background-color: #206bc4 !important;
+    color: white !important;
+}
+
+#messages-list .text-end .card .text-white-50 {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+</style>
+

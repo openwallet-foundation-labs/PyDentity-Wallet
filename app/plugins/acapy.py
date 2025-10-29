@@ -163,3 +163,39 @@ class AgentController:
                 headers=self.tenant_headers,
             )
         )
+    
+    def get_cred_def_info(self, cred_def_id):
+        current_app.logger.info("Getting Credential Definition Info")
+        return self._try_return(
+            requests.get(
+                f"{self.admin_endpoint}/credential-definitions/{cred_def_id}",
+                headers=self.tenant_headers,
+            )
+        )
+    
+    def get_presentation_exchange_info(self, pres_ex_id):
+        current_app.logger.info("Getting Presentation Exchange Info")
+        return self._try_return(
+            requests.get(
+                f"{self.admin_endpoint}/present-proof-2.0/records/{pres_ex_id}",
+                headers=self.tenant_headers,
+            )
+        )
+    
+    def delete_presentation_exchange(self, pres_ex_id):
+        current_app.logger.info("Deleting Presentation Exchange")
+        return self._try_return(
+            requests.delete(
+                f"{self.admin_endpoint}/present-proof-2.0/records/{pres_ex_id}",
+                headers=self.tenant_headers,
+            )
+        )
+    
+    def get_matching_credentials_for_presentation(self, pres_ex_id):
+        current_app.logger.info("Getting Matching Credentials for Presentation")
+        return self._try_return(
+            requests.get(
+                f"{self.admin_endpoint}/present-proof-2.0/records/{pres_ex_id}/credentials",
+                headers=self.tenant_headers,
+            )
+        )

@@ -22,7 +22,6 @@ import json
 
 bp = Blueprint("auth", __name__)
 agent = AgentController()
-askar = AskarStorage()
 webauthn = WebAuthnProvider()
 
 
@@ -101,9 +100,18 @@ def login():
 
     elif request.method == "POST":
         current_app.logger.warning(f"Verify login: {client_id}")
-        profile = await_(askar.fetch(AskarStorageKeys.PROFILES, client_id))
-        wallet = await_(askar.fetch(AskarStorageKeys.WALLETS, profile.get("wallet_id")))
-        if not profile or not wallet:
+        
+        # Fetch profile from global storage
+        global_askar = AskarStorage.global_store()
+        profile = await_(global_askar.fetch(AskarStorageKeys.PROFILES, client_id))
+        if not profile:
+            abort(jsonify({"verified": False}), 400)
+        
+        # Fetch wallet from wallet-specific storage
+        wallet_id = profile.get("wallet_id")
+        wallet_askar = AskarStorage.for_wallet(wallet_id)
+        wallet = await_(wallet_askar.fetch(AskarStorageKeys.WALLETS))
+        if not wallet:
             abort(jsonify({"verified": False}), 400)
 
         attestation = json.loads(request.get_data())
@@ -113,7 +121,7 @@ def login():
                 wallet.get("wallet_id"),
                 wallet.get("wallet_key"),
             ).get("token")
-            await_(askar.update(AskarStorageKeys.WALLETS, client_id, wallet))
+            await_(wallet_askar.update(AskarStorageKeys.WALLETS, "data", wallet))
 
             session["client_id"], session["wallet_id"] = client_id, wallet["wallet_id"]
 

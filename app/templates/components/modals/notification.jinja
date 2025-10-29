@@ -59,17 +59,21 @@
                                 </div>
                                 <div class="col-auto">
                                     {% if notification.get('type') == 'cred_offer' %}
-                                    <a href="{{ url_for('main.credential_offer', exchange_id=notification.get('details', {}).get('exchange_id', '')) }}" class="btn btn-sm btn-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
+                                    <a href="{{ url_for('credentials.view_credential_offer', exchange_id=notification.get('id', '')) }}" class="btn btn-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                                         </svg>
-                                        View Details
+                                        View Offer
                                     </a>
                                     {% elif notification.get('type') == 'pres_request' %}
-                                    <button class="btn btn-sm btn-primary" onclick="respondToPresentation('{{ notification.get('details', {}).get('exchange_id', '') }}')">
+                                    <a href="{{ url_for('credentials.view_presentation_request', exchange_id=notification.get('id', '')) }}" class="btn btn-blue">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                            <path d="M22 2L11 13"></path>
+                                            <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                                        </svg>
                                         Respond
-                                    </button>
+                                    </a>
                                     {% endif %}
                                 </div>
                             </div>
@@ -108,7 +112,7 @@ function acceptCredentialOffer(exchangeId) {
     button.textContent = 'Accepting...';
     button.disabled = true;
     
-    fetch(`{{ url_for('main.accept_credential_offer', exchange_id='EXCHANGE_ID') }}`.replace('EXCHANGE_ID', exchangeId), {
+    fetch(`{{ url_for('credentials.accept_credential_offer', exchange_id='EXCHANGE_ID') }}`.replace('EXCHANGE_ID', exchangeId), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -148,7 +152,7 @@ function declineCredentialOffer(exchangeId) {
     button.textContent = 'Declining...';
     button.disabled = true;
     
-    fetch(`{{ url_for('main.decline_credential_offer', exchange_id='EXCHANGE_ID') }}`.replace('EXCHANGE_ID', exchangeId), {
+    fetch(`{{ url_for('credentials.decline_credential_offer', exchange_id='EXCHANGE_ID') }}`.replace('EXCHANGE_ID', exchangeId), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -173,12 +177,6 @@ function declineCredentialOffer(exchangeId) {
     });
 }
 
-function respondToPresentation(exchangeId) {
-    console.log('Responding to presentation request:', exchangeId);
-    // For now, just show a message - this would need more complex logic
-    showToast('Presentation response functionality coming soon!', 'info');
-}
-
 function markAllAsRead() {
     console.log('Marking all notifications as read');
     // For now, just reload the page
@@ -188,23 +186,73 @@ function markAllAsRead() {
     }, 1000);
 }
 
-function showToast(message, type = 'info') {
-    // Create a simple toast notification
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible position-fixed`;
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.parentNode.removeChild(toast);
-        }
-    }, 5000);
+// Use the showToast function from parent page if available, otherwise define locally
+if (typeof showToast !== 'function') {
+    function showToast(message, type = 'info', duration = 4000) {
+        const toast = document.createElement('div');
+        const toastId = 'toast-' + Date.now();
+        
+        toast.id = toastId;
+        toast.className = `alert alert-dismissible position-fixed`;
+        toast.style.cssText = `
+            top: 20px; 
+            right: 20px; 
+            z-index: 10000; 
+            min-width: 280px; 
+            max-width: 360px;
+            background-color: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #1e293b;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        `;
+        
+        const colors = {success: '#2fb344', error: '#d63939', info: '#206bc4'};
+        const color = colors[type] || colors.info;
+        
+        const icon = type === 'success' ? 
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="20 6 9 17 4 12"></polyline></svg>` :
+            type === 'error' ?
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>` :
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+        
+        toast.innerHTML = `
+            <div style="padding: 0.875rem 1rem;">
+                <div class="d-flex align-items-center">
+                    <div style="color: ${color}; flex-shrink: 0;">${icon}</div>
+                    <div class="flex-grow-1 ms-2" style="font-size: 0.875rem; font-weight: 500; line-height: 1.4;">${message}</div>
+                    <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close" style="opacity: 0.4; font-size: 0.75rem;"></button>
+                </div>
+            </div>
+            <div style="height: 3px; background: rgba(0, 0, 0, 0.06);">
+                <div id="${toastId}-progress" style="height: 100%; background: ${color}; width: 100%; transition: width ${duration}ms linear;"></div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        requestAnimationFrame(() => {
+            const progressBar = document.getElementById(toastId + '-progress');
+            if (progressBar) progressBar.style.width = '0%';
+        });
+        
+        const removeTimeout = setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease-out';
+                setTimeout(() => {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 300);
+            }
+        }, duration);
+        
+        toast.querySelector('.btn-close').addEventListener('click', () => {
+            clearTimeout(removeTimeout);
+        });
+    }
 }
 </script>

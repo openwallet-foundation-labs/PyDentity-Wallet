@@ -8,12 +8,12 @@ import base64
 
 from urllib.parse import urlparse
 
-askar = AskarStorage()
 agent = AgentController()
 
 class QRScanner:
     def __init__(self, wallet_id):
         self.wallet_id = wallet_id
+        self.askar = AskarStorage.for_wallet(wallet_id)
 
     async def handle_payload(self, payload):
         current_app.logger.info("Parsing payload")
@@ -51,7 +51,7 @@ class QRScanner:
             
         current_app.logger.info(invitation)
         if invitation.get('@type') and invitation.get('@type').startswith('https://didcomm.org/out-of-band/1.'):
-            if (wallet := await askar.fetch(AskarStorageKeys.WALLETS, self.wallet_id)):
+            if (wallet := await self.askar.fetch(AskarStorageKeys.WALLETS)):
                 agent.set_token(wallet['token'])
                 agent.receive_invitation(invitation)
 
