@@ -1,64 +1,510 @@
 {% extends('layouts/base.jinja') %}
 {% block page %}
-{# {% include('components/modals/credential.jinja')%} #}
+{% include('components/modals/credential.jinja')%}
+{% include('components/modals/notification.jinja')%}
+{% include('components/modals/connection-details.jinja')%}
+
+<style>
+    /* Mobile-optimized tab styling */
+    .card-tab {
+        -webkit-tap-highlight-color: rgba(32, 107, 196, 0.1);
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+        min-height: 60px;
+    }
+    
+    .card-tab:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease-out;
+    }
+    
+    .section-container {
+        opacity: 1;
+        will-change: opacity;
+    }
+    
+    /* Optimize for smooth animations on mobile */
+    @media (prefers-reduced-motion: no-preference) {
+        .section-container {
+            transition: opacity 0.2s ease-in;
+        }
+    }
+</style>
+
 <div class="page-body">
-    <div class="container">
-        <div class="row row-deck row-cards">
-            {% for credential in session.get('credentials', []) %}
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row g-2 align-items-center">
-                            <div class="col-auto">
-                                <span class="avatar avatar-lg" data-bs-toggle="modal"
-                                    data-bs-target="#modal-credential-{{ loop.index }}"
-                                    {% if credential.get('issuer') is mapping %}
-                                    style="background-image: url({{ credential.get('issuer').get('image', None) }})"></span>
-                                    {% else %}
-                                    style="background-image: url()"></span>
-                                    {% endif %}
-                            </div>
-                            <div class="col">
-                                <h5 class="m-0">
-                                    <a href="#">{{ credential.get('name', 'Verifiable Credential') }}</a>
-                                </h5>
-                                <div class="text-secondary">
-                                    {% if credential.get('issuer') is mapping %}
-                                    {{ credential.get('issuer', {}).get('name', 'Unlabelled Issuer') }}
-                                    {% else %}Unlabelled Issuer{% endif %}
-                                </div>
-                                <div class="small mt-1">
-                                    {% if credential.get('validFrom') %} {{ credential['validFrom'].split('T')[0] }}
-                                    {% elif credential.get('issuanceDate') %} {{ credential['issuanceDate'].split('T')[0] }}
-                                    {% else %} No Issuance {% endif %}
-                                    -
-                                    {% if credential.get('validUntil') %} {{ credential['validUntil'].split('T')[0] }}
-                                    {% elif credential.get('expirationDate') %} {{ credential['expirationDate'].split('T')[0] }}
-                                    {% else %} No Expiration {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <a href="#" onclick='downloadVc({{ credential | tojson }})' class="btn-action">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-download">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
-                                        <path d="M7 11l5 5l5 -5" />
-                                        <path d="M12 4l0 12" />
+    <div class="container-fluid">
+
+        <!-- Stats Cards (Interactive Tabs) -->
+        <div class="row row-cols-3 g-2 mb-3">
+            <div class="col">
+                <div class="card card-tab" onclick="showSection('credentials')" id="credentials-tab" style="cursor: pointer; transition: all 0.2s;">
+                    <div class="card-body text-center py-2">
+                        <div class="mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon text-green">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                                     </svg>
-                                </a>
-                            </div>
+                        </div>
+                        <div class="h3 m-0">{{ session.get('credentials', [])|length }}</div>
+                        <div class="text-secondary small">Credentials</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card card-tab" onclick="showSection('connections')" id="connections-tab" style="cursor: pointer; transition: all 0.2s;">
+                    <div class="card-body text-center py-2">
+                        <div class="mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon text-blue">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            </svg>
+        </div>
+                        <div class="h3 m-0">{{ session.get('connections', [])|length }}</div>
+                        <div class="text-secondary small">Connections</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card card-tab" onclick="showSection('notifications')" id="notifications-tab" style="cursor: pointer; transition: all 0.2s; position: relative;">
+                    <div class="card-body text-center py-2">
+                        <div class="mb-1" style="position: relative; display: inline-block;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon text-yellow">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span id="notification-dot" style="display: {% if session.get('notifications', []) %}block{% else %}none{% endif %}; position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background-color: #d63939; border-radius: 50%; border: 2px solid white;"></span>
+                    </div>
+                        <div class="h3 m-0" id="notification-count">{{ session.get('notifications', [])|length }}</div>
+                        <div class="text-secondary small">Pending</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credentials Section -->
+        <div class="row section-container" id="credentials-section">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="card-title">My Credentials</h3>
+                    {% if session.get('credentials', []) %}
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                <path d="M3 6h18"></path>
+                                <path d="M7 12h10"></path>
+                                <path d="M10 18h4"></path>
+                            </svg>
+                            Sort
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="#" onclick="sortCredentials('newest')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                                    <path d="M12 5l0 14"></path>
+                                    <path d="M18 13l-6 6"></path>
+                                    <path d="M6 13l6 6"></path>
+                                </svg>
+                                Newest First
+                            </a>
+                            <a class="dropdown-item" href="#" onclick="sortCredentials('oldest')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                                    <path d="M12 5l0 14"></path>
+                                    <path d="M18 11l-6 -6"></path>
+                                    <path d="M6 11l6 -6"></path>
+                                </svg>
+                                Oldest First
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" onclick="sortCredentials('name-asc')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                                    <path d="M4 6l7 0"></path>
+                                    <path d="M4 12l11 0"></path>
+                                    <path d="M4 18l11 0"></path>
+                                </svg>
+                                Name (A-Z)
+                            </a>
+                            <a class="dropdown-item" href="#" onclick="sortCredentials('name-desc')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                                    <path d="M4 6l11 0"></path>
+                                    <path d="M4 12l11 0"></path>
+                                    <path d="M4 18l7 0"></path>
+                                </svg>
+                                Name (Z-A)
+                            </a>
+                            <a class="dropdown-item" href="#" onclick="sortCredentials('issuer')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                                    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path>
+                                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path>
+                                </svg>
+                                By Issuer
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if session.get('credentials', []) %}
+                    {% for credential in session.get('credentials', []) %}
+                    <div class="card mb-3" style="border-left: 4px solid #206bc4;">
+                        <div class="card-body p-3">
+                            <div class="row g-2 align-items-center">
+                                {% set issuer = credential.get('issuer', {}) if credential.get('issuer') is mapping else {} %}
+                                {% set issuer_image = issuer.get('image', '') %}
+                                {% set issuer_name = issuer.get('name', 'Unknown') %}
+                                {% set issuer_id = issuer.get('id', '') %}
+                                
+                                <div class="col-auto">
+                                    {% if issuer_image %}
+                                    <span class="avatar avatar-sm" style="background-image: url({{ issuer_image }})"></span>
+                                    {% else %}
+                                    <span class="avatar avatar-sm credential-identicon" 
+                                          data-did="{{ issuer_id }}"
+                                          style="font-size: 0.7rem;">
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="col" style="min-width: 0;">
+                                    <h4 class="m-0 text-truncate">{{ credential.get('name', 'Verifiable Credential') }}</h4>
+                                    <div class="text-secondary text-truncate">
+                                        {{ issuer_name }}
+                                    </div>
+                                    <div class="small text-muted">
+                                        {% if credential.get('validFrom') %} 
+                                        Issued: {{ credential['validFrom'].split('T')[0] }}
+                                        {% elif credential.get('issuanceDate') %} 
+                                        Issued: {{ credential['issuanceDate'].split('T')[0] }}
+                                        {% endif %}
+                                        {% if credential.get('validUntil') or credential.get('expirationDate') %}
+                                        • Expires: {{ credential['validUntil'].split('T')[0] if credential.get('validUntil') else credential['expirationDate'].split('T')[0] }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-credential-{{ loop.index }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        View
+                                        </button>
                         </div>
                     </div>
                 </div>
             </div>
             {% endfor %}
+                {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <div class="empty">
+                            <div class="empty-img">
+                                <img src="https://preview.tabler.io/static/illustrations/undraw_quitting_time_dm8t.svg" height="128" alt="">
+                            </div>
+                            <p class="empty-title">No credentials yet</p>
+                            <p class="empty-subtitle text-secondary">
+                                Scan a QR code or accept a credential offer to get started.
+                            </p>
+                            <div class="empty-action">
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scanner-modal">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                                        <path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+                                        <path d="M7 17l0 .01"></path>
+                                        <path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+                                        <path d="M7 7l0 .01"></path>
+                                        <path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+                                        <path d="M17 7l0 .01"></path>
+                                        <path d="M14 14l3 0"></path>
+                                        <path d="M20 14l0 .01"></path>
+                                        <path d="M14 14l0 3"></path>
+                                        <path d="M14 20l3 0"></path>
+                                        <path d="M17 17l3 0"></path>
+                                        <path d="M20 17l0 3"></path>
+                                    </svg>
+                                    Scan QR Code
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Connections Section (Hidden by default) -->
+        <div class="row section-container" id="connections-section" style="display: none;">
+            <div class="col-12">
+                <h3 class="card-title mb-3">My Connections</h3>
+                {% if session.get('connections', []) %}
+                    {% for connection in session.get('connections', []) %}
+                    <div class="card mb-3" style="cursor: pointer; transition: transform 0.1s;" 
+                         onclick="openConnectionModal('{{ connection.get('connection_id') }}')"
+                         onmouseover="this.style.transform='translateY(-2px)'" 
+                         onmouseout="this.style.transform='translateY(0)'">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <span class="avatar bg-blue-lt">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="18" cy="5" r="3"></circle>
+                                            <circle cx="6" cy="12" r="3"></circle>
+                                            <circle cx="18" cy="19" r="3"></circle>
+                                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="col">
+                                    <h4 class="mb-1">{{ connection.get('label', 'Unknown') }}</h4>
+                                    <div class="text-secondary small">
+                                        <span class="badge bg-{{ 'success' if connection.get('state') == 'active' else 'secondary' }}-lt">
+                                            {{ connection.get('state', 'unknown') }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon text-muted">
+                                        <path d="M9 18l6-6-6-6"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <div class="empty">
+                            <p class="empty-title">No connections</p>
+                            <p class="empty-subtitle text-secondary">
+                                Scan a QR code to connect with an issuer or verifier.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Notifications Section (Hidden by default) -->
+        <div class="row section-container" id="notifications-section" style="display: none;">
+            <div class="col-12">
+                <h3 class="card-title mb-3">Pending Notifications</h3>
+                {% if session.get('notifications', []) %}
+                <div class="card">
+                    <div class="list-group list-group-flush">
+                        {% for notification in session.get('notifications', []) %}
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    {% if notification.get('type') == 'cred_offer' %}
+                                    <span class="bg-green text-white avatar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                        </svg>
+                                    </span>
+                                    {% elif notification.get('type') == 'pres_request' %}
+                                    <span class="bg-blue text-white avatar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                                            <circle cx="12" cy="13" r="3"></circle>
+                                        </svg>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="col text-truncate">
+                                    <div class="d-block fw-bold">{{ notification.get('title', 'Notification') }}</div>
+                                    <div class="d-block text-secondary">
+                                        {% if notification.get('type') == 'cred_offer' %}
+                                        Credential offer received
+                                        {% elif notification.get('type') == 'pres_request' %}
+                                        Presentation request received
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    {% if notification.get('type') == 'cred_offer' %}
+                                    <a href="{{ url_for('credentials.view_credential_offer', exchange_id=notification.get('id', '')) }}" class="btn btn-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                        </svg>
+                                        View Offer
+                                    </a>
+                                    {% elif notification.get('type') == 'pres_request' %}
+                                    <a href="{{ url_for('credentials.view_presentation_request', exchange_id=notification.get('id', '')) }}" class="btn btn-blue">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                            <path d="M22 2L11 13"></path>
+                                            <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                                        </svg>
+                                        Respond
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <div class="empty">
+                            <p class="empty-title">No pending notifications</p>
+                            <p class="empty-subtitle text-secondary">
+                                You're all caught up!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
 <script>
+    let currentSection = 'credentials';
+    
+    function showSection(sectionName) {
+        // Don't re-render if already on this section
+        if (currentSection === sectionName) return;
+        
+        // Instant hide for snappy mobile feel
+        document.querySelectorAll('.section-container').forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Remove active state from all tabs
+        document.querySelectorAll('.card-tab').forEach(tab => {
+            tab.style.borderColor = '';
+            tab.style.boxShadow = '';
+            tab.style.transform = '';
+        });
+        
+        // Instant show with quick fade for smoothness (mobile-optimized)
+        const targetSection = document.getElementById(sectionName + '-section');
+        targetSection.style.opacity = '0';
+        targetSection.style.display = 'block';
+        
+        // Use requestAnimationFrame for smooth rendering on mobile
+        requestAnimationFrame(() => {
+            targetSection.style.opacity = '1';
+        });
+        
+        // Add active state to selected tab
+        const activeTab = document.getElementById(sectionName + '-tab');
+        activeTab.style.borderColor = '#206bc4';
+        activeTab.style.borderWidth = '2px';
+        activeTab.style.boxShadow = '0 0 0 3px rgba(32, 107, 196, 0.1)';
+        activeTab.style.transform = 'translateY(-2px)';
+        
+        // Hide notification dot when user views notifications (they've seen them)
+        if (sectionName === 'notifications') {
+            const notificationDot = document.getElementById('notification-dot');
+            if (notificationDot) {
+                notificationDot.style.display = 'none';
+            }
+        }
+        
+        currentSection = sectionName;
+    }
+    
+    // Open connection details modal
+    function openConnectionModal(connectionId) {
+        const modal = new bootstrap.Modal(document.getElementById('connection-details-modal'));
+        
+        // Load connection details
+        if (typeof loadConnectionDetails === 'function') {
+            loadConnectionDetails(connectionId);
+        } else {
+            // Fallback if modal script hasn't loaded yet
+            fetch(`/connections/${connectionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error loading connection:', data.error);
+                        return;
+                    }
+                    
+                    const conn = data.connection;
+                    
+                    // Extract DID method
+                    let didMethod = 'Unknown';
+                    const fullDid = conn.did || 'did:unknown';
+                    if (fullDid && fullDid.startsWith('did:')) {
+                        const parts = fullDid.split(':');
+                        if (parts.length >= 2) {
+                            didMethod = `did:${parts[1]}`;
+                        }
+                    }
+                    
+                    document.getElementById('connection-label').textContent = conn.label || 'Unknown';
+                    document.getElementById('connection-state').textContent = conn.state || 'unknown';
+                    document.getElementById('connection-did-method').textContent = didMethod;
+                })
+                .catch(error => {
+                    console.error('Error fetching connection details:', error);
+                });
+        }
+        
+        modal.show();
+    }
+    
+    // Initialize identicons for credentials without images
+    function initializeIdenticons() {
+        document.querySelectorAll('.credential-identicon').forEach(avatar => {
+            const did = avatar.dataset.did;
+            
+            const color = didToColor(did);
+            const initials = getInitialsFromDID(did);
+            
+            avatar.style.backgroundColor = color;
+            avatar.style.color = 'white';
+            avatar.style.fontWeight = '600';
+            avatar.style.display = 'flex';
+            avatar.style.alignItems = 'center';
+            avatar.style.justifyContent = 'center';
+            avatar.textContent = initials;
+        });
+    }
+    
+    // Initialize - always default to credentials section
+    document.addEventListener('DOMContentLoaded', function() {
+        // Generate identicons
+        initializeIdenticons();
+        
+        // Always show credentials section by default
+        showSection('credentials');
+    });
+    
+    // Generate identicon color from DID
+    function didToColor(did) {
+        if (!did) return '#999';
+        
+        // Simple hash function
+        let hash = 0;
+        for (let i = 0; i < did.length; i++) {
+            hash = did.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        // Generate HSL color with good saturation and lightness
+        const hue = Math.abs(hash % 360);
+        return `hsl(${hue}, 65%, 55%)`;
+    }
+    
+    // Get initials from DID (last 2 alphanumeric chars)
+    function getInitialsFromDID(did) {
+        if (!did) return '?';
+        // Extract alphanumeric characters from DID
+        const alphanumeric = did.replace(/[^a-zA-Z0-9]/g, '');
+        if (alphanumeric.length === 0) return '?';
+        if (alphanumeric.length === 1) return alphanumeric.toUpperCase();
+        // Use last 2 characters for more uniqueness
+        return alphanumeric.slice(-2).toUpperCase();
+    }
+    
     function downloadVc(credential) {
         var a = document.createElement("a");
         var file = new Blob([JSON.stringify(credential, null, 4)], { type: 'application/json' });
@@ -67,5 +513,248 @@
         a.click();
         return true
     }
+
+    function sortCredentials(sortBy) {
+        const container = document.getElementById('credentials-section');
+        const cards = Array.from(container.querySelectorAll('.card.mb-3'));
+        
+        cards.sort((a, b) => {
+            const nameA = a.querySelector('h4').textContent.trim();
+            const nameB = b.querySelector('h4').textContent.trim();
+            const issuerA = a.querySelector('.text-secondary').textContent.trim();
+            const issuerB = b.querySelector('.text-secondary').textContent.trim();
+            
+            // Get dates from the "Issued" text
+            const dateTextA = a.querySelector('.small.text-muted')?.textContent || '';
+            const dateTextB = b.querySelector('.small.text-muted')?.textContent || '';
+            
+            switch(sortBy) {
+                case 'newest':
+                    // Default order (reverse to show newest first)
+                    return cards.indexOf(b) - cards.indexOf(a);
+                case 'oldest':
+                    // Keep original order (oldest first)
+                    return cards.indexOf(a) - cards.indexOf(b);
+                case 'name-asc':
+                    return nameA.localeCompare(nameB);
+                case 'name-desc':
+                    return nameB.localeCompare(nameA);
+                case 'issuer':
+                    return issuerA.localeCompare(issuerB);
+                default:
+                    return 0;
+            }
+        });
+        
+        // Re-append cards in sorted order
+        const parent = cards[0].parentNode;
+        cards.forEach(card => parent.appendChild(card));
+    }
+
+    // Server-Sent Events for real-time notifications
+    let eventSource = null;
+    
+    function connectNotificationStream() {
+        console.log('Connecting to notification stream...');
+        eventSource = new EventSource('{{ url_for("main.notification_stream") }}');
+        
+        eventSource.onopen = function() {
+            console.log('✅ Connected to notification stream');
+        };
+        
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('Notification event received:', data);
+            
+            if (data.type === 'connected') {
+                console.log('SSE connection established for wallet:', data.wallet_id);
+            }
+            else if (data.type === 'connection_active') {
+                console.log('🤝 Connection active:', data.data.label);
+                
+                // Check if connection processing modal is open (it will handle the UI feedback)
+                const connectionModal = document.getElementById('connection-processing-modal');
+                const isModalOpen = connectionModal && connectionModal.classList.contains('show');
+                
+                if (!isModalOpen) {
+                    // Only show toast if modal isn't open (user wasn't actively waiting)
+                    showToast(`Connected with ${data.data.label}`, 'success');
+                }
+                
+                // Reload to update connection status
+                setTimeout(() => location.reload(), 1000);
+            }
+            else if (data.type === 'notification_created') {
+                console.log('🔔 New notification:', data.data.title);
+                showToast(`New offer: ${data.data.title}`, 'success');
+                
+                // Show notification dot and update count
+                const notificationDot = document.getElementById('notification-dot');
+                const notificationCount = document.getElementById('notification-count');
+                if (notificationDot) notificationDot.style.display = 'block';
+                if (notificationCount) {
+                    const currentCount = parseInt(notificationCount.textContent) || 0;
+                    notificationCount.textContent = currentCount + 1;
+                }
+                
+                // Reload to show new notification in list
+                setTimeout(() => location.reload(), 2000);
+            }
+            else if (data.type === 'notification_removed') {
+                console.log('✅ Notification removed');
+                
+                // Update count and potentially hide dot
+                const notificationDot = document.getElementById('notification-dot');
+                const notificationCount = document.getElementById('notification-count');
+                if (notificationCount) {
+                    const currentCount = parseInt(notificationCount.textContent) || 0;
+                    const newCount = Math.max(0, currentCount - 1);
+                    notificationCount.textContent = newCount;
+                    
+                    // Hide dot if no notifications left
+                    if (newCount === 0 && notificationDot) {
+                        notificationDot.style.display = 'none';
+                    }
+                }
+                
+                // Reload to update UI
+                setTimeout(() => location.reload(), 500);
+            }
+            else if (data.type === 'credential_received') {
+                console.log('🎉 Credential received:', data.data.credential_name);
+                showToast(`Credential received: ${data.data.credential_name}`, 'success');
+                // Reload to show new credential
+                setTimeout(() => location.reload(), 1500);
+            }
+        };
+        
+        eventSource.onerror = function(error) {
+            console.error('SSE error:', error);
+            eventSource.close();
+            // Reconnect after 5 seconds
+            console.log('Reconnecting in 5 seconds...');
+            setTimeout(connectNotificationStream, 5000);
+        };
+    }
+    
+    // Helper function to show toast notifications
+    function showToast(message, type = 'info', duration = 4000) {
+        const toast = document.createElement('div');
+        const toastId = 'toast-' + Date.now();
+        
+        toast.id = toastId;
+        toast.className = `alert alert-dismissible position-fixed`;
+        toast.style.cssText = `
+            top: 20px; 
+            right: 20px; 
+            z-index: 10000; 
+            min-width: 280px; 
+            max-width: 360px;
+            background-color: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #1e293b;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        `;
+        
+        // Color for icon and progress bar
+        const colors = {
+            success: '#2fb344',
+            error: '#d63939',
+            info: '#206bc4'
+        };
+        const color = colors[type] || colors.info;
+        
+        // Icon based on type
+        const icon = type === 'success' ? 
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="20 6 9 17 4 12"></polyline></svg>` :
+            type === 'error' ?
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>` :
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+        
+        toast.innerHTML = `
+            <div style="padding: 0.875rem 1rem;">
+                <div class="d-flex align-items-center">
+                    <div style="color: ${color}; flex-shrink: 0;">${icon}</div>
+                    <div class="flex-grow-1 ms-2" style="font-size: 0.875rem; font-weight: 500; line-height: 1.4;">${message}</div>
+                    <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close" style="opacity: 0.4; font-size: 0.75rem;"></button>
+                </div>
+            </div>
+            <div style="height: 3px; background: rgba(0, 0, 0, 0.06);">
+                <div id="${toastId}-progress" style="height: 100%; background: ${color}; width: 100%; transition: width ${duration}ms linear;"></div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Start countdown animation
+        requestAnimationFrame(() => {
+            const progressBar = document.getElementById(toastId + '-progress');
+            if (progressBar) {
+                progressBar.style.width = '0%';
+            }
+        });
+        
+        // Auto-remove after duration
+        const removeTimeout = setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s cubic-bezier(0.4, 0, 1, 1)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }
+        }, duration);
+        
+        // Clear timeout if user closes manually
+        toast.querySelector('.btn-close').addEventListener('click', () => {
+            clearTimeout(removeTimeout);
+        });
+    }
+    
+    // Add animation styles
+    if (!document.getElementById('toast-animations')) {
+        const style = document.createElement('style');
+        style.id = 'toast-animations';
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Start SSE connection when page loads
+    connectNotificationStream();
+    
+    // Close connection when page unloads
+    window.addEventListener('beforeunload', function() {
+        if (eventSource) {
+            eventSource.close();
+        }
+    });
 </script>
 {% endblock %}

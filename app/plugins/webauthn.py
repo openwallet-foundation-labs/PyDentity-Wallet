@@ -4,7 +4,7 @@ import json
 import base64
 from config import Config
 from app.models.webauthn import WebAuthnCredential
-from app.plugins import AskarStorage
+from app.plugins import AskarStorage, AskarStorageKeys
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 from webauthn.helpers import base64url_to_bytes
 from webauthn.helpers.structs import (
@@ -14,15 +14,13 @@ from webauthn.helpers.structs import (
     AuthenticatorAssertionResponse,
 )
 
-askar = AskarStorage()
-
-
 class WebAuthnProvider:
     def __init__(self):
         self.rp_id = Config.DOMAIN
         self.rp_name = Config.APP_NAME
         self.origin = Config.APP_URL
         self.challenge_exp = 10  # Challenge expiration minutes
+        self.askar = AskarStorage.global_store()  # WebAuthn credentials are global
 
     async def prepare_credential_creation(self, client_id, username):
         public_credential_creation_options = webauthn.generate_registration_options(
@@ -82,16 +80,16 @@ class WebAuthnProvider:
         tags = {
             "client_id": client_id,
         }
-        await askar.store(
-            "webauthn/credential", credential["credential_id"], credential, tags
+        await self.askar.store(
+            AskarStorageKeys.WEB_AUTHN_CREDENTIALS, credential["credential_id"], credential, tags
         )
 
     async def prepare_login_with_credential(self, client_id):
         """
         Prepare the authentication options for a user trying to log in.
         """
-        credential_id = await askar.fetch_name_by_tag(
-            "webauthn/credential", {"client_id": client_id}
+        credential_id = await self.askar.fetch_name_by_tag(
+            AskarStorageKeys.WEB_AUTHN_CREDENTIALS, {"client_id": client_id}
         )
         if not credential_id:
             return None
@@ -139,10 +137,9 @@ class WebAuthnProvider:
             type="public-key",
         )
         expected_challenge = Config.AUTHENTICATION_CHALLENGES.get(client_id)
-        credential_id = await askar.fetch_name_by_tag(
-            "webauthn/credential", {"client_id": client_id}
-        )
-        credential = await askar.fetch("webauthn/credential", credential_id)
+        tags = {"client_id": client_id}
+        credential_id = await self.askar.fetch_name_by_tag(AskarStorageKeys.WEB_AUTHN_CREDENTIALS, tags)
+        credential = await self.askar.fetch(AskarStorageKeys.WEB_AUTHN_CREDENTIALS, credential_id)
 
         # This will raise if the credential does not authenticate
         # It seems that safari doesn't track credential sign count correctly, so we just
@@ -166,5 +163,4 @@ class WebAuthnProvider:
         # This is mainly for reference since we can't use it because of Safari's weirdness.
         credential["current_sign_count"] += 1
         # session['webauthn_credential'] = stored_credential.model_dump()
-        tags = {"client_id": client_id}
-        await askar.update("webauthn/credential", credential_id, credential, tags)
+        await self.askar.update(AskarStorageKeys.WEB_AUTHN_CREDENTIALS, credential_id, credential, tags)

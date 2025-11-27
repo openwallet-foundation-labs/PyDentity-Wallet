@@ -29,7 +29,7 @@ function sleep(ms) {
 
 function stopScanner() {
     document.getElementById("video").srcObject = null;
-    location.reload();
+    // Don't reload immediately - let the connection processing modal handle it
 }
 
 function detect(source) {
@@ -83,7 +83,15 @@ function detect(source) {
                             payload: result[0].rawValue,
                         },
                         () => {
+                            // Close scanner modal
                             stopScanner();
+                            const scannerModal = bootstrap.Modal.getInstance(document.getElementById('scanner-modal'));
+                            if (scannerModal) {
+                                scannerModal.hide();
+                            }
+                            
+                            // Show connection processing modal with auto-refresh
+                            showConnectionProcessing();
                         });
                 }
             })

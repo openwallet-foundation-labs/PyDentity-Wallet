@@ -15,7 +15,7 @@ class Config(object):
     TESTING = True if ENV == "development" else False
 
     DOMAIN = os.getenv("PYDENTITY_WALLET_DOMAIN", "localhost")
-    APP_URL = os.getenv("PYDENTITY_WALLET_APP_URL", "http://localhost:5000")
+    APP_URL = f"https://{DOMAIN}"
     APP_NAME = os.getenv("PYDENTITY_WALLET_APP_NAME", "PyDentity Wallet")
     APP_ICON = os.getenv(
         "PYDENTITY_WALLET_APP_ICON",
@@ -27,6 +27,9 @@ class Config(object):
     )
 
     PROJECT_URL = "https://github.com/openwallet-foundation-labs/PyDentity-Wallet"
+    
+    # Demo AnonCreds URL for trying out the wallet
+    DEMO_ANONCREDS = os.getenv("DEMO_ANONCREDS", "https://anoncreds.vc")
 
     SECRET_KEY = os.getenv("PYDENTITY_WALLET_SECRET_KEY", "unsecured")
 
@@ -51,17 +54,11 @@ class Config(object):
     AGENT_ADMIN_ENDPOINT = os.getenv("AGENT_ADMIN_ENDPOINT")
 
     SESSION_COOKIE_NAME = "PyDentity"
-    SESSION_COOKIE_SAMESITE = "Strict"
-    SESSION_COOKIE_HTTPONLY = "True"
+    SESSION_COOKIE_SAMESITE = "Lax"  # Changed from Strict to Lax for ngrok compatibility
+    SESSION_COOKIE_HTTPONLY = True   # Changed from string to boolean
+    SESSION_COOKIE_SECURE = False    # Set to False for development with ngrok
 
     JSONIFY_PRETTYPRINT_REGULAR = True
-
-    NGROK_AUTHTOKEN = os.getenv("NGROK_AUTHTOKEN", None)
-    if NGROK_AUTHTOKEN:
-        listener = ngrok.werkzeug_develop()
-        APP_URL = listener.url()
-        DOMAIN = APP_URL.split("https://")[-1]
-        print(APP_URL)
-        qr = QRCode(box_size=10, border=4)
-        qr.add_data(listener.url())
-        qr.print_ascii()
+    
+    # Logging configuration
+    LOG_LEVEL = os.getenv("PYDENTITY_LOG_LEVEL", "INFO").upper()

@@ -1,0 +1,258 @@
+<!-- Notification Modal -->
+<div class="modal modal-blur fade" id="notification-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    Notifications
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if session.get('notifications', []) %}
+                    <div class="list-group list-group-flush">
+                        {% for notification in session.get('notifications', []) %}
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    {% if notification.get('type') == 'cred_offer' %}
+                                    <span class="bg-green text-white avatar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                        </svg>
+                                    </span>
+                                    {% elif notification.get('type') == 'pres_request' %}
+                                    <span class="bg-blue text-white avatar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                                            <circle cx="12" cy="13" r="3"></circle>
+                                        </svg>
+                                    </span>
+                                    {% else %}
+                                    <span class="bg-secondary text-white avatar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                        </svg>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="col text-truncate">
+                                    <div class="d-block fw-bold">{{ notification.get('title', 'Notification') }}</div>
+                                    <div class="d-block text-secondary">
+                                        {% if notification.get('type') == 'cred_offer' %}
+                                        Credential offer received
+                                        {% elif notification.get('type') == 'pres_request' %}
+                                        Presentation request received
+                                        {% else %}
+                                        {{ notification.get('type', 'Unknown') }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-block text-muted small">
+                                        {{ notification.get('timestamp', '') }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    {% if notification.get('type') == 'cred_offer' %}
+                                    <a href="{{ url_for('credentials.view_credential_offer', exchange_id=notification.get('id', '')) }}" class="btn btn-success">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                        </svg>
+                                        View Offer
+                                    </a>
+                                    {% elif notification.get('type') == 'pres_request' %}
+                                    <a href="{{ url_for('credentials.view_presentation_request', exchange_id=notification.get('id', '')) }}" class="btn btn-blue">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1">
+                                            <path d="M22 2L11 13"></path>
+                                            <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                                        </svg>
+                                        Respond
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                <div class="empty">
+                    <div class="empty-img">
+                        <img src="https://preview.tabler.io/static/illustrations/undraw_notify_re_65on.svg" height="128" alt="">
+                    </div>
+                    <p class="empty-title">No notifications</p>
+                    <p class="empty-subtitle text-secondary">
+                        You're all caught up! New credential offers and presentation requests will appear here.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            {% if session.get('notifications', []) %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="markAllAsRead()">Mark All as Read</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function acceptCredentialOffer(exchangeId) {
+    console.log('Accepting credential offer:', exchangeId);
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Accepting...';
+    button.disabled = true;
+    
+    fetch(`{{ url_for('credentials.accept_credential_offer', exchange_id='EXCHANGE_ID') }}`.replace('EXCHANGE_ID', exchangeId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Show success message
+            showToast('Credential offer accepted!', 'success');
+            // Close modal and refresh page
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            throw new Error(data.message || 'Failed to accept credential offer');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to accept credential offer: ' + error.message, 'error');
+        button.textContent = originalText;
+        button.disabled = false;
+    });
+}
+
+function declineCredentialOffer(exchangeId) {
+    console.log('Declining credential offer:', exchangeId);
+    
+    if (!confirm('Are you sure you want to decline this credential offer?')) {
+        return;
+    }
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Declining...';
+    button.disabled = true;
+    
+    fetch(`{{ url_for('credentials.decline_credential_offer', exchange_id='EXCHANGE_ID') }}`.replace('EXCHANGE_ID', exchangeId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast('Credential offer declined', 'info');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            throw new Error(data.message || 'Failed to decline credential offer');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to decline credential offer: ' + error.message, 'error');
+        button.textContent = originalText;
+        button.disabled = false;
+    });
+}
+
+function markAllAsRead() {
+    console.log('Marking all notifications as read');
+    // For now, just reload the page
+    showToast('Marking all as read...', 'info');
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+
+// Use the showToast function from parent page if available, otherwise define locally
+if (typeof showToast !== 'function') {
+    function showToast(message, type = 'info', duration = 4000) {
+        const toast = document.createElement('div');
+        const toastId = 'toast-' + Date.now();
+        
+        toast.id = toastId;
+        toast.className = `alert alert-dismissible position-fixed`;
+        toast.style.cssText = `
+            top: 20px; 
+            right: 20px; 
+            z-index: 10000; 
+            min-width: 280px; 
+            max-width: 360px;
+            background-color: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #1e293b;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        `;
+        
+        const colors = {success: '#2fb344', error: '#d63939', info: '#206bc4'};
+        const color = colors[type] || colors.info;
+        
+        const icon = type === 'success' ? 
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><polyline points="20 6 9 17 4 12"></polyline></svg>` :
+            type === 'error' ?
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>` :
+            `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+        
+        toast.innerHTML = `
+            <div style="padding: 0.875rem 1rem;">
+                <div class="d-flex align-items-center">
+                    <div style="color: ${color}; flex-shrink: 0;">${icon}</div>
+                    <div class="flex-grow-1 ms-2" style="font-size: 0.875rem; font-weight: 500; line-height: 1.4;">${message}</div>
+                    <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close" style="opacity: 0.4; font-size: 0.75rem;"></button>
+                </div>
+            </div>
+            <div style="height: 3px; background: rgba(0, 0, 0, 0.06);">
+                <div id="${toastId}-progress" style="height: 100%; background: ${color}; width: 100%; transition: width ${duration}ms linear;"></div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        requestAnimationFrame(() => {
+            const progressBar = document.getElementById(toastId + '-progress');
+            if (progressBar) progressBar.style.width = '0%';
+        });
+        
+        const removeTimeout = setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease-out';
+                setTimeout(() => {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 300);
+            }
+        }, duration);
+        
+        toast.querySelector('.btn-close').addEventListener('click', () => {
+            clearTimeout(removeTimeout);
+        });
+    }
+}
+</script>

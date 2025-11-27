@@ -1,0 +1,122 @@
+<!-- Connection Processing Modal -->
+<div class="modal modal-blur fade" id="connection-processing-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-body text-center py-5">
+                <div class="mb-3" id="connection-spinner">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Connecting...</span>
+                    </div>
+                </div>
+                <div class="mb-3" id="connection-success" style="display: none; opacity: 0; transition: opacity 0.5s ease-in;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon text-success" style="filter: drop-shadow(0 0 8px rgba(40, 167, 69, 0.3));">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <h4 id="connection-status-text">Establishing Connection...</h4>
+                <p class="text-muted mb-0" id="connection-status-detail">Please wait while we connect to the issuer</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let connectionCheckInterval = null;
+let connectionTimeout = null;
+
+function showConnectionProcessing() {
+    const modal = new bootstrap.Modal(document.getElementById('connection-processing-modal'));
+    modal.show();
+    
+    // Start checking connection state from the agent
+    let attempts = 0;
+    const maxAttempts = 10; // 10 attempts * 500ms = 5 seconds
+    
+    connectionCheckInterval = setInterval(async () => {
+        attempts++;
+        
+        try {
+            // Check connection state from the backend
+            const response = await fetch('{{ url_for("main.get_connection_status") }}');
+            const data = await response.json();
+            
+            console.log('Connection state:', data.state, 'Connected:');
+            
+            if (data.state === 'active') {
+                // Connection is active/completed
+                clearInterval(connectionCheckInterval);
+                
+                // Fade out spinner
+                const spinner = document.getElementById('connection-spinner');
+                spinner.style.transition = 'opacity 0.3s ease-out';
+                spinner.style.opacity = '0';
+                
+                setTimeout(() => {
+                    spinner.style.display = 'none';
+                    
+                    // Show success checkmark with fade-in
+                    const successIcon = document.getElementById('connection-success');
+                    successIcon.style.display = 'block';
+                    setTimeout(() => {
+                        successIcon.style.opacity = '1';
+                    }, 10);
+                    
+                    // Update text
+                    document.getElementById('connection-status-text').textContent = 'Connection Established!';
+                    document.getElementById('connection-status-detail').textContent = `Connected to ${data.label || 'issuer'}`;
+                    
+                    // Wait to let user see the success state, then fade out modal
+                    setTimeout(() => {
+                        const modalElement = document.querySelector('.modal.show');
+                        if (modalElement) {
+                            modalElement.style.transition = 'opacity 0.4s ease-out';
+                            modalElement.style.opacity = '0';
+                        }
+                        
+                        // Reload after fade completes
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 400);
+                    }, 1800); // Show success for 1.8 seconds
+                }, 300);
+                
+                return;
+            }
+            
+            // Update status message based on state
+            if (data.state === 'request') {
+                document.getElementById('connection-status-text').textContent = 'Connection Requested...';
+            } else if (data.state === 'response') {
+                document.getElementById('connection-status-text').textContent = 'Finalizing Connection...';
+            }
+            
+        } catch (error) {
+            console.error('Error checking connection state:', error);
+        }
+        
+        // Timeout after max attempts
+        if (attempts >= maxAttempts) {
+            clearInterval(connectionCheckInterval);
+            document.getElementById('connection-status-text').textContent = 'Taking longer than expected...';
+            document.getElementById('connection-status-detail').textContent = 'Refreshing page...';
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        }
+    }, 500); // Check every 500ms
+}
+
+function cancelConnectionProcessing() {
+    if (connectionCheckInterval) {
+        clearInterval(connectionCheckInterval);
+    }
+    if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+    }
+}
+
+// Clean up on page unload
+window.addEventListener('beforeunload', cancelConnectionProcessing);
+</script>
+

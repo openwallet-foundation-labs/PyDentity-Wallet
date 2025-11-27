@@ -16,4 +16,5 @@ dependencies = [
     "redis>=6.2.0",
     "requests>=2.32.4",
     "webauthn>=2.6.0",
+    "watchdog>=3.0.0",
 ]

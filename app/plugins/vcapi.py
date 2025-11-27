@@ -2,24 +2,24 @@ import requests
 import uuid
 from datetime import datetime
 from app.plugins.acapy import AgentController
-from app.plugins.askar import AskarStorage
+from app.plugins.askar import AskarStorage, AskarStorageKeys
 from app.models.notification import Notification
 
 agent = AgentController()
-askar = AskarStorage()
 
 
 class VcApiExchanger:
     def __init__(self, wallet_id=None, exchange_url=None):
         self.wallet_id = wallet_id
         self.exchange_url = exchange_url
+        self.askar = AskarStorage.for_wallet(wallet_id) if wallet_id else AskarStorage.global_store()
 
     def initiate_exchange(self):
         r = requests.post(self.exchange_url, json={})
         return r.json()
 
     async def store_credential(self, vp):
-        wallet = await askar.fetch("wallet", self.wallet_id)
+        wallet = await self.askar.fetch(AskarStorageKeys.WALLETS)
         for vc in vp.get("verifiableCredential"):
             agent.set_token(
                 agent.request_token(self.wallet_id, wallet.get("wallet_key")).get(
@@ -32,7 +32,7 @@ class VcApiExchanger:
             agent.store_credential(vc)
 
             # We store the VC in the server store
-            await askar.append("credentials", self.wallet_id, vc)
+            await self.askar.append("credentials", vc)
 
             # We create an event notification
             notification = Notification(
@@ -45,10 +45,10 @@ class VcApiExchanger:
                 message="Credential Stored",
                 timestamp=str(datetime.now().isoformat()),
             ).model_dump()
-            await askar.append("notifications", self.wallet_id, notification)
+            await self.askar.append("notifications", notification)
 
     async def present_credential(self, vpr):
-        wallet = await askar.fetch("wallet", self.wallet_id)
+        wallet = await self.askar.fetch("wallet")
 
         # Start building presentation object
         presentation = {
@@ -67,7 +67,7 @@ class VcApiExchanger:
 
         # TODO, implement tag query for credential selection
         # Get all credentials from wallet
-        credentials = await askar.fetch("credentials", self.wallet_id)
+        credentials = await self.askar.fetch("credentials")
         for query in vpr.get("query"):
             if query.get("type") == "DIDAuthentication":
                 methods = [method["method"] for method in query.get("acceptedMethods")]
@@ -167,4 +167,4 @@ class VcApiExchanger:
             message=reason,
             timestamp=str(datetime.now().isoformat()),
         ).model_dump()
-        await askar.append("notifications", self.wallet_id, notification)
+        await self.askar.append("notifications", notification)
