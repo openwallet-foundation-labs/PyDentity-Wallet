@@ -34,12 +34,13 @@ class QRScanner:
                 await self.didcomm_handler(decoded_invitation)
                 return {"type": "oob_invitation", "label": decoded_invitation.get("label", "Unknown")}
                 
-            # elif payload.split('?')[-1].startswith('_oobid='):
-            #     try:
-            #         invitation = r.json()
-            #         await self.didcomm_handler(invitation)
-            #     except:
-            #         current_app.logger.info(r.text)
+            elif payload.split('?')[-1].startswith('_oobid='):
+                try:
+                    r = requests.get(payload)
+                    invitation = r.json()
+                    await self.didcomm_handler(invitation)
+                except:
+                    current_app.logger.info(r.text)
         
         current_app.logger.info("No matching URL scheme found")
         return {"type": "unknown", "message": "No matching URL scheme found"}
