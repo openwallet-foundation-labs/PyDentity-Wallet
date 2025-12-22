@@ -89,6 +89,16 @@ function detect(source) {
                             if (scannerModal) {
                                 scannerModal.hide();
                             }
+                            // BUG #21: connectionless present-proof request inside OOB (redirect form)
+                            if (data && data.result && data.result.action === "presentation_request") {
+                                if (data.result.exchange_id) {
+                                    window.location.href = `/presentations/${data.result.exchange_id}`;
+                                } else {
+                                    // fallback: reload so notification / inbox shows
+                                    window.location.reload();
+                                }
+                                return;
+                            }
                             
                             // Show connection processing modal with auto-refresh
                             showConnectionProcessing();
