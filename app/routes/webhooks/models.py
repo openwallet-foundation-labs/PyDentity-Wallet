@@ -40,7 +40,7 @@ class CredentialOffer(CustomBaseModel):
 class PresentationRequest(CustomBaseModel):
     timestamp: str = Field()
     exchange_id: str = Field()
-    connection_id: str = Field()
+    connection_id: Union[str, None] = Field(None)
     comment: Union[str, None] = Field(None)
     attributes: dict = Field()
     predicates: dict = Field()
