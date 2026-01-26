@@ -342,7 +342,7 @@ def respond_to_presentation_request(exchange_id):
                     
                     # Check if we need timestamp for revocation
                     timestamp = None
-                    if 'interval' in match:
+                    if match.get('interval', None) is not None:
                         timestamp = match['interval'].get('to')
                     
                     for referent in match['presentation_referents']:

@@ -485,18 +485,17 @@ class WebhookManager:
     async def topic_present_proof_v2_0(self, payload):
         """Handle present proof v2.0 webhooks"""
         if payload.get('state') == 'request-received':
+            connection_id = payload.get('connection_id')
             pres_req = PresentationRequest(
                 timestamp=payload.get('created_at'),
                 exchange_id=payload.get('pres_ex_id'),
-                connection_id=payload.get('connection_id'),
+                connection_id=connection_id,
                 attributes=payload.get('by_format').get('pres_request').get('anoncreds').get('requested_attributes'),
                 predicates=payload.get('by_format').get('pres_request').get('anoncreds').get('requested_predicates')
             ).model_dump()
             await self.askar.append(AskarStorageKeys.PRES_REQUESTS, pres_req)
             
-            connection = self.agent.get_connection_info(payload.get('connection_id'))
-            
-            verifier_name = connection.get('their_label')
+            verifier_label = self.agent.get_connection_info(connection_id).get('their_label') if connection_id else 'Unknown Verifier'
             pres_name = payload.get('by_format').get('pres_request').get('anoncreds').get('name')
             
             # Create notification using new individual storage system
@@ -504,7 +503,7 @@ class WebhookManager:
                 wallet_id=self.wallet_id,
                 notification_id=payload.get('pres_ex_id'),
                 notification_type='pres_request',
-                title=f'{verifier_name} is requesting {pres_name}',
+                title=f'{verifier_label} is requesting {pres_name}',
                 details=pres_req
             )
             
